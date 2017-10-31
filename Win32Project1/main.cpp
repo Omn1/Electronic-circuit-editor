@@ -12,7 +12,14 @@ float n = 12, m = 16;
 float editorFieldSizeX = 800;
 float editorFieldSizeY = 600;
 float topMargin = 50;
-
+float leftMargin = 100;
+float separatorThickness = -5;
+float itemIconSize = 100;
+float itemLeftMargin = 10;
+float itemTopMargin = 35;
+float standartDotLength = 5;
+float resistorSizeX = 5;
+float resistorSizeY = 2;
 bool mat[1000][1000][2];
 
 void addLine(int x, int y, int l, int ishor) {
@@ -41,39 +48,172 @@ void connectVertexes(float startX, float startY, float endX, float endY) {
 	addLine(startX, endY, endX - startX, 1);
 }
 
+float startX = 0, startY = 0;
+bool isStarted = 0;
+
+void startConnectingVertexes(float mouseX, float mouseY) {
+	isStarted = 1;
+	startX = mouseX;
+	startX -= leftMargin;
+	startX = round(startX * m / editorFieldSizeX);
+	startY = mouseY;
+	startY -= topMargin;
+	startY = round(startY * n / editorFieldSizeY);
+}
+
+void finishConnectingVertexes(float mouseX, float mouseY) {
+	isStarted = 0;
+	float endX = mouseX;
+	endX -= leftMargin;
+	endX = round(endX * m / editorFieldSizeX);
+	float endY = mouseY;
+	endY -= topMargin;
+	endY = round(endY * n / editorFieldSizeY);
+	connectVertexes(startX, startY, endX, endY);
+}
+sf::RenderWindow window(sf::VideoMode(leftMargin + editorFieldSizeX, topMargin + editorFieldSizeY), "Electronic circuit editor");
+
+void drawWirePreview() {
+	sf::RectangleShape temp;
+	temp.setOutlineThickness(gridOutlineThickness);
+	temp.setOutlineColor(sf::Color::Black);
+	float endX = sf::Mouse::getPosition(window).x;
+	endX -= leftMargin;
+	endX = round(endX * m / editorFieldSizeX);
+	float endY = sf::Mouse::getPosition(window).y;
+	endY -= topMargin;
+	endY = round(endY * n / editorFieldSizeY);
+	temp.setFillColor(sf::Color::Green);
+	temp.setOutlineColor(sf::Color::Green);
+
+	temp.setSize(sf::Vector2f((endX - startX) / m * editorFieldSizeX, gridThickness));
+	temp.setPosition(sf::Vector2f(startX / m * editorFieldSizeX + leftMargin, endY / n * editorFieldSizeY + topMargin));
+	window.draw(temp);
+
+	temp.setSize(sf::Vector2f(gridThickness, (endY - startY) / n * editorFieldSizeY));
+	temp.setPosition(sf::Vector2f(startX / m * editorFieldSizeX + leftMargin, startY / n * editorFieldSizeY + topMargin));
+	window.draw(temp);
+}
+
+int currentItem = 0;
+
+void drawDottedLine(float x, float y, float length, float dotLength, int ishor) {
+	sf::RectangleShape temp;
+	temp.setFillColor(sf::Color::Green);
+	if (ishor) {
+		for (float curX = x; curX < x + length; curX += 2 * dotLength) {
+			temp.setSize(sf::Vector2f(std::min(dotLength, x+length-curX), gridThickness));
+			temp.setPosition(sf::Vector2f(curX, y));
+			window.draw(temp);
+		}
+	}
+	else {
+		for (float curY = y; curY < y + length; curY += 2 * dotLength) {
+			temp.setSize(sf::Vector2f(gridThickness, std::min(y + length - curY, dotLength)));
+			temp.setPosition(sf::Vector2f(x, curY));
+			window.draw(temp);
+		}
+	}
+}
+
+void drawItemPreview(float X1, float Y1, float X2, float Y2) {
+	if (X1 > X2) {
+		std::swap(X1, X2);
+	}
+	if (Y1 > Y2) {
+		std::swap(Y1, Y2);
+	}
+	drawDottedLine(X1, Y1, X2 - X1, standartDotLength, 1);
+	drawDottedLine(X2, Y1, Y2 - Y1, standartDotLength, 0);
+	drawDottedLine(X1, Y2, X2 - X1, standartDotLength, 1);
+	drawDottedLine(X1, Y1, Y2 - Y1, standartDotLength, 0);
+}
+void getCurrentFieldCoords(float &X, float &Y) {
+	float curX = sf::Mouse::getPosition(window).x;
+	curX -= leftMargin;
+	curX = round(curX * m / editorFieldSizeX);
+	float curY = sf::Mouse::getPosition(window).y;
+	curY -= topMargin;
+	curY = round(curY * n / editorFieldSizeY);
+	X = curX;
+	Y = curY;
+}
+void getCurrentFlooredFieldCoords(float &X, float &Y) {
+	float curX = sf::Mouse::getPosition(window).x;
+	curX -= leftMargin;
+	curX = floor(curX * m / editorFieldSizeX);
+	float curY = sf::Mouse::getPosition(window).y;
+	curY -= topMargin;
+	curY = floor(curY * n / editorFieldSizeY);
+	X = curX;
+	Y = curY;
+}
+void drawResistorPreview() {
+	float curX, curY;
+	getCurrentFlooredFieldCoords(curX, curY);
+	curX = curX*editorFieldSizeX / m + leftMargin;
+	curY = curY*editorFieldSizeY / n + topMargin;
+	drawItemPreview(curX, curY, curX + resistorSizeX * editorFieldSizeX / m, curY + resistorSizeY * editorFieldSizeY / n);
+}
 int main()
 {
 	//AllocConsole();
 	//freopen("CONOUT$", "w", stdout);
 	
-	sf::Texture texture;
-	if (!texture.loadFromFile("toolbar-sprite.png")) {
+	sf::Texture toolbarTexture;
+	if (!toolbarTexture.loadFromFile("toolbar-sprite.png")) {
 		std::cout << "error opening texture\n";
 		return 0;
 	}
-	texture.setSmooth(true);
+	sf::Texture itemTexture;
+	if (!itemTexture.loadFromFile("item-sprite.png")) {
+		std::cout << "error opening texture\n";
+		return 0;
+	}
+	toolbarTexture.setSmooth(true);
+
+	sf::Sprite wireItem;
+	wireItem.setTexture(itemTexture);
+	wireItem.setTextureRect(sf::IntRect(0, 20, 70, 20));
+	wireItem.setPosition(sf::Vector2f(itemLeftMargin - separatorThickness, topMargin + itemTopMargin));
+
+	sf::Sprite resistorItem;
+	resistorItem.setTexture(itemTexture);
+	resistorItem.setTextureRect(sf::IntRect(0, 0, 70, 20));
+	resistorItem.setPosition(sf::Vector2f(itemLeftMargin - separatorThickness, topMargin + itemTopMargin + itemIconSize + separatorThickness));
 
 	sf::Sprite clearButton;
-	clearButton.setTexture(texture);
+	clearButton.setTexture(toolbarTexture);
 	clearButton.setTextureRect(sf::IntRect(64, 32, 32, 32));
 	clearButton.setPosition(sf::Vector2f(10, 9));
-	sf::RenderWindow window(sf::VideoMode(editorFieldSizeX, topMargin+editorFieldSizeY), "Electronic circuit editor");
 	sf::RectangleShape vline(sf::Vector2f(editorFieldSizeX, gridThickness));
 	sf::RectangleShape hline(sf::Vector2f(gridThickness, editorFieldSizeY));
-	sf::RectangleShape background(sf::Vector2f(editorFieldSizeX, topMargin + editorFieldSizeY));
-	sf::RectangleShape menuBarBG(sf::Vector2f(editorFieldSizeX, topMargin));
+	sf::RectangleShape background(sf::Vector2f(leftMargin + editorFieldSizeX, topMargin + editorFieldSizeY));
+	sf::RectangleShape menuBarBG(sf::Vector2f(leftMargin + editorFieldSizeX, topMargin));
+	
+	sf::RectangleShape wireIconBG(sf::Vector2f(leftMargin, itemIconSize));
+	wireIconBG.setFillColor(sf::Color::White);
+	wireIconBG.setOutlineColor(sf::Color::Red);
+	wireIconBG.setOutlineThickness(separatorThickness);
+	wireIconBG.setPosition(sf::Vector2f(0, topMargin+separatorThickness));
+
+	sf::RectangleShape resistorIconBG(sf::Vector2f(leftMargin, itemIconSize));
+	resistorIconBG.setFillColor(sf::Color::White);
+	resistorIconBG.setOutlineColor(sf::Color::Red);
+	resistorIconBG.setOutlineThickness(separatorThickness);
+	resistorIconBG.setPosition(sf::Vector2f(0, topMargin + 2*separatorThickness + itemIconSize));
 
 	menuBarBG.setFillColor(sf::Color::White);
-	menuBarBG.setOutlineThickness(-5);
+	menuBarBG.setOutlineThickness(separatorThickness);
 	menuBarBG.setOutlineColor(sf::Color::Red);
 	background.setFillColor(sf::Color::White);
 	vline.setFillColor(sf::Color(0,0,0,120));
 	hline.setFillColor(sf::Color(0,0,0,120));
 
-	float startX, startY;
-	bool isStarted = 0;
-
-	//std::vector< std::pair<sf::Vector2f, sf::Vector2f> > lines;
+	sf::RectangleShape selectedItemBG(sf::Vector2f(itemIconSize + 2 * separatorThickness, itemIconSize + 2 * separatorThickness));
+	selectedItemBG.setFillColor(sf::Color::Transparent);
+	selectedItemBG.setOutlineThickness(separatorThickness);
+	selectedItemBG.setOutlineColor(sf::Color(120, 120, 120, 255));
 
 	while (window.isOpen())
 	{
@@ -86,12 +226,8 @@ int main()
 				float delta = event.mouseWheelScroll.delta;
 				n *= (100.f + delta) / 100.f;
 				m *= (100.f + delta) / 100.f;
-				//gridThickness *= (100.f - delta) / 100.f;
-				//gridThickness = std::max(gridThickness, 1.f);
-				//gridThickness = round(gridThickness);
 				gridThickness = round(editorFieldSizeX / m * 0.1);
 				gridThickness = std::max(gridThickness, 1.f);
-				//gridOutlineThickness *= (100.f - delta) / 100.f;
 				gridOutlineThickness = gridThickness * 0.4;
 				gridOutlineThickness = std::max(gridOutlineThickness, 1.f);
 				vline.setSize(sf::Vector2f(editorFieldSizeX, gridThickness));
@@ -99,26 +235,23 @@ int main()
 			}
 			else if (event.type == sf::Event::MouseButtonPressed) {
 				if (event.mouseButton.button == sf::Mouse::Left) {
-					isStarted = 1;
-					startX = event.mouseButton.x;
-					startX = round(startX * m / editorFieldSizeX);
-					startY = event.mouseButton.y;
-					startY -= topMargin;
-					startY = round(startY * n / editorFieldSizeY);
+					if (event.mouseButton.x >= leftMargin && event.mouseButton.y >= topMargin) {
+						if (currentItem == 0) {
+							startConnectingVertexes(event.mouseButton.x, event.mouseButton.y);
+						}
+					}
+					else if (event.mouseButton.y >= topMargin && event.mouseButton.x < leftMargin) {
+						currentItem = int(event.mouseButton.y - topMargin) / int(itemIconSize + separatorThickness);
+					}
 				}
 			}
 			else if (event.type == sf::Event::MouseButtonReleased) {
 				if (event.mouseButton.button == sf::Mouse::Left) {
-					isStarted = 0;
-					float endX = event.mouseButton.x;
-					endX = round(endX * m / editorFieldSizeX);
-					float endY = event.mouseButton.y;
-					endY -= topMargin;
-					endY = round(endY * n / editorFieldSizeY);
-					//lines.push_back({sf::Vector2f(startX, startY), sf::Vector2f(0, endY - startY)});
-					//lines.push_back({sf::Vector2f(startX, endY), sf::Vector2f(1, endX - startX)});
-					connectVertexes(startX, startY, endX, endY);
-					//std::cout << lines.size() << std::endl;
+					if (event.mouseButton.x >= leftMargin && event.mouseButton.y >= topMargin && isStarted) {
+						if (currentItem == 0) { 
+							finishConnectingVertexes(event.mouseButton.x, event.mouseButton.y); 
+						}
+					}
 				}
 			}
 		}
@@ -126,68 +259,54 @@ int main()
 		window.clear();
 		window.draw(background);
 		window.draw(menuBarBG);
+		window.draw(wireIconBG);
+		window.draw(resistorIconBG);
 		for (int i = 1; i < n; i++) {
-			vline.setPosition(sf::Vector2f(0, topMargin + editorFieldSizeY / n*i));
+			vline.setPosition(sf::Vector2f(leftMargin, topMargin + editorFieldSizeY / n*i));
 			window.draw(vline);
 		}
 		for (int i = 1; i < m; i++) {
-			hline.setPosition(sf::Vector2f(editorFieldSizeX / m*i, topMargin));
+			hline.setPosition(sf::Vector2f(leftMargin + editorFieldSizeX / m*i, topMargin));
 			window.draw(hline);
 		}
 		sf::RectangleShape temp;
 		temp.setFillColor(sf::Color::Black);
 		temp.setOutlineThickness(gridOutlineThickness);
 		temp.setOutlineColor(sf::Color::Black);
-		/*for (int i = 0; i < lines.size(); i++) {
-			sf::Vector2f pos = lines[i].first;
-			pos.x *= editorFieldSizeX / m;
-			pos.y *= editorFieldSizeY / n;
-			pos.y += topMargin;
-			temp.setPosition(pos);
-			sf::Vector2f tempSize;
-			if (lines[i].second.x == 0) {
-				tempSize.x = round(gridThickness);
-				tempSize.y = lines[i].second.y*editorFieldSizeY / n;
-			}
-			else {
-				tempSize.y = round(gridThickness);
-				tempSize.x = lines[i].second.y*editorFieldSizeX / m;
-			}
-			temp.setSize(tempSize);
-			window.draw(temp);
-		}*/
 		for (int i = 0; i < 1000; i++) {
 			for (int j = 0; j < 1000; j++) {
 				if (mat[i][j][0]) {
 					temp.setSize(sf::Vector2f(editorFieldSizeX / m, round(gridThickness)));
-					temp.setPosition(sf::Vector2f(i*editorFieldSizeX / m, topMargin + j*editorFieldSizeY / n));
+					temp.setPosition(sf::Vector2f(leftMargin + i*editorFieldSizeX / m, topMargin + j*editorFieldSizeY / n));
 					window.draw(temp);
 				}
 				if (mat[i][j][1]) {
 					temp.setSize(sf::Vector2f(round(gridThickness), editorFieldSizeX / m));
-					temp.setPosition(sf::Vector2f(i*editorFieldSizeX / m, topMargin + j*editorFieldSizeY / n));
+					temp.setPosition(sf::Vector2f(leftMargin + i*editorFieldSizeX / m, topMargin + j*editorFieldSizeY / n));
 					window.draw(temp);
 				}
 			}
 		}
 		if (isStarted) {
-			float endX = sf::Mouse::getPosition(window).x;
-			endX = round(endX * m / editorFieldSizeX);
-			float endY = sf::Mouse::getPosition(window).y;
-			endY -= topMargin;
-			endY = round(endY * n / editorFieldSizeY);
-			temp.setFillColor(sf::Color::Green);
-			temp.setOutlineColor(sf::Color::Green);
-
-			temp.setSize(sf::Vector2f((endX - startX) / m * editorFieldSizeX, gridThickness));
-			temp.setPosition(sf::Vector2f(startX / m * editorFieldSizeX,endY / n * editorFieldSizeY + topMargin));
-			window.draw(temp);
-
-			temp.setSize(sf::Vector2f(gridThickness, (endY - startY) / n * editorFieldSizeY));
-			temp.setPosition(sf::Vector2f(startX / m * editorFieldSizeX,startY / n * editorFieldSizeY + topMargin));
-			window.draw(temp);
+			if (sf::Mouse::getPosition(window).x >= leftMargin && sf::Mouse::getPosition(window).y >= topMargin) {
+				if (currentItem == 0) {
+					drawWirePreview();
+				}
+			}
+			else {
+				isStarted = 0;
+			}
+		}
+		if (sf::Mouse::getPosition(window).x >= leftMargin && sf::Mouse::getPosition(window).y >= topMargin) {
+			if (currentItem == 1) {
+				drawResistorPreview();
+			}
 		}
 		window.draw(clearButton);
+		window.draw(wireItem);
+		window.draw(resistorItem);
+		selectedItemBG.setPosition(sf::Vector2f(-separatorThickness, topMargin + currentItem*(itemIconSize + separatorThickness)));
+		window.draw(selectedItemBG);
 		window.display();
 	}
 
