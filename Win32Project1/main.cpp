@@ -20,6 +20,8 @@ float itemTopMargin = 35;
 float standartDotLength = 5;
 float resistorSizeX = 5;
 float resistorSizeY = 2;
+float batterySizeX = 5;
+float batterySizeY = 4;
 bool mat[1000][1000][2];
 
 void addLine(int x, int y, int l, int ishor) {
@@ -149,6 +151,21 @@ void getCurrentFlooredFieldCoords(float &X, float &Y) {
 	Y = curY;
 }
 
+void deleteInnerWires(int X1, int Y1, int X2, int Y2) {
+	for (int i = X1 + 1; i < X2; i++) {
+		for (int j = Y1 + 1; j < Y2; j++) {
+			mat[i][j][0] = 0;
+			mat[i][j][1] = 0;
+		}
+	}
+	for (int i = X1 + 1; i < X2; i++) {
+		mat[i][Y1][1] = 0;
+	}
+	for (int j = Y1 + 1; j < Y2; j++) {
+		mat[X1][j][0] = 0;
+	}
+}
+
 bool isRotated = 0;
 
 void drawResistorPreview() {
@@ -168,20 +185,10 @@ void putResistor() {
 	float curX, curY;
 	getCurrentFlooredFieldCoords(curX, curY);
 	if (!isRotated) {
-		for (int i = curX; i < curX + resistorSizeX; i++) {
-			for (int j = curY; j < curY + resistorSizeY; j++) {
-				mat[i][j][0] = 0;
-				mat[i][j][1] = 0;
-			}
-		}
+		deleteInnerWires(curX, curY, curX + resistorSizeX, curY + resistorSizeY);
 	}
 	else {
-		for (int i = curX; i < curX + resistorSizeY; i++) {
-			for (int j = curY; j < curY + resistorSizeX; j++) {
-				mat[i][j][0] = 0;
-				mat[i][j][1] = 0;
-			}
-		}
+		deleteInnerWires(curX, curY, curX + resistorSizeY, curY + resistorSizeX);
 	}
 	resistors.push_back({ {curX,curY}, isRotated });
 }
@@ -230,6 +237,69 @@ void drawResistor(float X, float Y, bool isrot) {
 		window.draw(temp);
 	}
 }
+
+void drawBatteryPreview() {
+	float curX, curY;
+	getCurrentFlooredFieldCoords(curX, curY);
+	curX = curX*editorFieldSizeX / m + leftMargin;
+	curY = curY*editorFieldSizeY / n + topMargin;
+	if (!isRotated)
+		drawItemPreview(curX, curY, curX + batterySizeX * editorFieldSizeX / m, curY + batterySizeY * editorFieldSizeY / n);
+	else
+		drawItemPreview(curX, curY, curX + batterySizeY * editorFieldSizeX / m, curY + batterySizeX * editorFieldSizeY / n);
+}
+
+std::vector<std::pair<std::pair<float, float>, bool > > batteries;
+
+void putBattery() {
+	float curX, curY;
+	getCurrentFlooredFieldCoords(curX, curY);
+	if (!isRotated) {
+		deleteInnerWires(curX, curY, curX + batterySizeX, curY + batterySizeY);
+	}
+	else {
+		deleteInnerWires(curX, curY, curX + batterySizeY, curY + batterySizeX);
+	}
+	batteries.push_back({ { curX,curY }, isRotated });
+}
+
+void drawBattery(float X, float Y, bool isrot) {
+	X *= editorFieldSizeX / m;
+	X += leftMargin;
+	Y *= editorFieldSizeY / n;
+	Y += topMargin;
+	sf::RectangleShape temp;
+	temp.setFillColor(sf::Color::Black);
+	temp.setOutlineColor(sf::Color::Black);
+	temp.setOutlineThickness(gridOutlineThickness);
+	if (!isrot) {
+		temp.setSize(sf::Vector2f(2 * editorFieldSizeX / m, gridThickness));
+		temp.setPosition(sf::Vector2f(X, Y + 2 * editorFieldSizeY / n));
+		window.draw(temp);
+		temp.setPosition(sf::Vector2f(X + 3 * editorFieldSizeX / m, Y + 2 * editorFieldSizeY / n));
+		window.draw(temp);
+		temp.setSize(sf::Vector2f(gridThickness, 3 * editorFieldSizeY / n));
+		temp.setPosition(sf::Vector2f(X + 2 * editorFieldSizeX / m, Y + 0.5 * editorFieldSizeY / n));
+		window.draw(temp);
+		temp.setSize(sf::Vector2f(gridThickness, editorFieldSizeY / n));
+		temp.setPosition(sf::Vector2f(X + 3 * editorFieldSizeX / m, Y + 1.5 * editorFieldSizeY / n));
+		window.draw(temp);
+	}
+	else {
+		temp.setSize(sf::Vector2f(gridThickness, 2 * editorFieldSizeY / n));
+		temp.setPosition(sf::Vector2f(X + 2 * editorFieldSizeX / m, Y));
+		window.draw(temp);
+		temp.setPosition(sf::Vector2f(X + 2 * editorFieldSizeX / m, Y + 3 * editorFieldSizeY / n));
+		window.draw(temp);
+		temp.setSize(sf::Vector2f(3 * editorFieldSizeX / m, gridThickness));
+		temp.setPosition(sf::Vector2f(X + 0.5 * editorFieldSizeX / m, Y + 2 * editorFieldSizeY / n));
+		window.draw(temp);
+		temp.setSize(sf::Vector2f(editorFieldSizeX / m, gridThickness));
+		temp.setPosition(sf::Vector2f(X + 1.5 * editorFieldSizeX / m, Y + 3 * editorFieldSizeY / n));
+		window.draw(temp);
+	}
+}
+
 int main()
 {
 	//AllocConsole();
@@ -257,6 +327,11 @@ int main()
 	resistorItem.setTextureRect(sf::IntRect(0, 0, 70, 20));
 	resistorItem.setPosition(sf::Vector2f(itemLeftMargin - separatorThickness, topMargin + itemTopMargin + itemIconSize + separatorThickness));
 
+	sf::Sprite batteryItem;
+	batteryItem.setTexture(itemTexture);
+	batteryItem.setTextureRect(sf::IntRect(0, 40, 70, 20));
+	batteryItem.setPosition(sf::Vector2f(itemLeftMargin - separatorThickness, topMargin + itemTopMargin + 2 * (itemIconSize + separatorThickness)));
+
 	sf::RectangleShape vline(sf::Vector2f(editorFieldSizeX, gridThickness));
 	sf::RectangleShape hline(sf::Vector2f(gridThickness, editorFieldSizeY));
 	sf::RectangleShape background(sf::Vector2f(leftMargin + editorFieldSizeX, topMargin + editorFieldSizeY));
@@ -273,6 +348,12 @@ int main()
 	resistorIconBG.setOutlineColor(sf::Color::Red);
 	resistorIconBG.setOutlineThickness(separatorThickness);
 	resistorIconBG.setPosition(sf::Vector2f(0, topMargin + 2*separatorThickness + itemIconSize));
+
+	sf::RectangleShape batteryIconBG(sf::Vector2f(leftMargin, itemIconSize));
+	batteryIconBG.setFillColor(sf::Color::White);
+	batteryIconBG.setOutlineColor(sf::Color::Red);
+	batteryIconBG.setOutlineThickness(separatorThickness);
+	batteryIconBG.setPosition(sf::Vector2f(0, topMargin + 3 * separatorThickness + 2 * itemIconSize));
 
 	menuBarBG.setFillColor(sf::Color::White);
 	menuBarBG.setOutlineThickness(separatorThickness);
@@ -346,6 +427,9 @@ int main()
 						else if (currentItem == 1) {
 							putResistor();
 						}
+						else if (currentItem == 2) {
+							putBattery();
+						}
 					}
 					else if (event.mouseButton.y >= topMargin && event.mouseButton.x < leftMargin) {
 						currentItem = int(event.mouseButton.y - topMargin) / int(itemIconSize + separatorThickness);
@@ -375,6 +459,7 @@ int main()
 		window.draw(menuBarBG);
 		window.draw(wireIconBG);
 		window.draw(resistorIconBG);
+		window.draw(batteryIconBG);
 		window.draw(drawButtonBG);
 		window.draw(deleteButtonBG);
 		window.draw(rotateButtonBG);
@@ -407,6 +492,9 @@ int main()
 		for (int i = 0; i < resistors.size(); i++) {
 			drawResistor(resistors[i].first.first, resistors[i].first.second, resistors[i].second);
 		}
+		for (int i = 0; i < batteries.size(); i++) {
+			drawBattery(batteries[i].first.first, batteries[i].first.second, batteries[i].second);
+		}
 		if (isStarted) {
 			if (sf::Mouse::getPosition(window).x >= leftMargin && sf::Mouse::getPosition(window).y >= topMargin) {
 				if (currentItem == 0) {
@@ -421,9 +509,13 @@ int main()
 			if (currentItem == 1) {
 				drawResistorPreview();
 			}
+			else if (currentItem == 2) {
+				drawBatteryPreview();
+			}
 		}
 		window.draw(wireItem);
 		window.draw(resistorItem);
+		window.draw(batteryItem);
 		selectedItemBG.setPosition(sf::Vector2f(-separatorThickness, topMargin + currentItem*(itemIconSize + separatorThickness)));
 		window.draw(selectedItemBG);
 		window.draw(drawButton);
