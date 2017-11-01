@@ -148,12 +148,87 @@ void getCurrentFlooredFieldCoords(float &X, float &Y) {
 	X = curX;
 	Y = curY;
 }
+
+bool isRotated = 0;
+
 void drawResistorPreview() {
 	float curX, curY;
 	getCurrentFlooredFieldCoords(curX, curY);
 	curX = curX*editorFieldSizeX / m + leftMargin;
 	curY = curY*editorFieldSizeY / n + topMargin;
-	drawItemPreview(curX, curY, curX + resistorSizeX * editorFieldSizeX / m, curY + resistorSizeY * editorFieldSizeY / n);
+	if(!isRotated)
+		drawItemPreview(curX, curY, curX + resistorSizeX * editorFieldSizeX / m, curY + resistorSizeY * editorFieldSizeY / n);
+	else
+		drawItemPreview(curX, curY, curX + resistorSizeY * editorFieldSizeX / m, curY + resistorSizeX * editorFieldSizeY / n);
+}
+
+std::vector<std::pair<std::pair<float, float>, bool > > resistors;
+
+void putResistor() {
+	float curX, curY;
+	getCurrentFlooredFieldCoords(curX, curY);
+	if (!isRotated) {
+		for (int i = curX; i < curX + resistorSizeX; i++) {
+			for (int j = curY; j < curY + resistorSizeY; j++) {
+				mat[i][j][0] = 0;
+				mat[i][j][1] = 0;
+			}
+		}
+	}
+	else {
+		for (int i = curX; i < curX + resistorSizeY; i++) {
+			for (int j = curY; j < curY + resistorSizeX; j++) {
+				mat[i][j][0] = 0;
+				mat[i][j][1] = 0;
+			}
+		}
+	}
+	resistors.push_back({ {curX,curY}, isRotated });
+}
+
+void drawResistor(float X, float Y, bool isrot) {
+	X *= editorFieldSizeX / m;
+	X += leftMargin;
+	Y *= editorFieldSizeY / n;
+	Y += topMargin;
+	sf::RectangleShape temp;
+	temp.setFillColor(sf::Color::Black);
+	temp.setOutlineColor(sf::Color::Black);
+	temp.setOutlineThickness(gridOutlineThickness);
+	if (!isrot) {
+		temp.setSize(sf::Vector2f(editorFieldSizeX / m, gridThickness));
+		temp.setPosition(sf::Vector2f(X, Y + editorFieldSizeY / n));
+		window.draw(temp);
+		temp.setPosition(sf::Vector2f(X + 4 * editorFieldSizeX / m, Y + editorFieldSizeY / n));
+		window.draw(temp);
+		temp.setSize(sf::Vector2f(3 * editorFieldSizeX / m, gridThickness));
+		temp.setPosition(sf::Vector2f(X + editorFieldSizeX / m, Y + 0.5*editorFieldSizeY / n));
+		window.draw(temp);
+		temp.setPosition(sf::Vector2f(X + editorFieldSizeX / m, Y + 1.5*editorFieldSizeY / n));
+		window.draw(temp);
+		temp.setSize(sf::Vector2f(gridThickness, editorFieldSizeY / n));
+		temp.setPosition(sf::Vector2f(X + editorFieldSizeX / m, Y + 0.5*editorFieldSizeY / n));
+		window.draw(temp);
+		temp.setPosition(sf::Vector2f(X + 4 * editorFieldSizeX / m, Y + 0.5*editorFieldSizeY / n));
+		window.draw(temp);
+	}
+	else {
+		temp.setSize(sf::Vector2f(gridThickness, editorFieldSizeY / n));
+		temp.setPosition(sf::Vector2f(X + editorFieldSizeX / m, Y));
+		window.draw(temp);
+		temp.setPosition(sf::Vector2f(X + editorFieldSizeX / m, Y + 4 * editorFieldSizeY / n));
+		window.draw(temp);
+		temp.setSize(sf::Vector2f(gridThickness, 3 * editorFieldSizeY / n));
+		temp.setPosition(sf::Vector2f(X + 0.5 * editorFieldSizeX / m, Y + editorFieldSizeY / n));
+		window.draw(temp);
+		temp.setPosition(sf::Vector2f(X + 1.5 * editorFieldSizeX / m, Y + editorFieldSizeY / n));
+		window.draw(temp);
+		temp.setSize(sf::Vector2f(editorFieldSizeX / m, gridThickness));
+		temp.setPosition(sf::Vector2f(X + 0.5 * editorFieldSizeX / m, Y + editorFieldSizeY / n));
+		window.draw(temp);
+		temp.setPosition(sf::Vector2f(X + 0.5 * editorFieldSizeX / m, Y + 4 * editorFieldSizeY / n));
+		window.draw(temp);
+	}
 }
 int main()
 {
@@ -182,10 +257,6 @@ int main()
 	resistorItem.setTextureRect(sf::IntRect(0, 0, 70, 20));
 	resistorItem.setPosition(sf::Vector2f(itemLeftMargin - separatorThickness, topMargin + itemTopMargin + itemIconSize + separatorThickness));
 
-	sf::Sprite clearButton;
-	clearButton.setTexture(toolbarTexture);
-	clearButton.setTextureRect(sf::IntRect(64, 32, 32, 32));
-	clearButton.setPosition(sf::Vector2f(10, 9));
 	sf::RectangleShape vline(sf::Vector2f(editorFieldSizeX, gridThickness));
 	sf::RectangleShape hline(sf::Vector2f(gridThickness, editorFieldSizeY));
 	sf::RectangleShape background(sf::Vector2f(leftMargin + editorFieldSizeX, topMargin + editorFieldSizeY));
@@ -215,6 +286,39 @@ int main()
 	selectedItemBG.setOutlineThickness(separatorThickness);
 	selectedItemBG.setOutlineColor(sf::Color(120, 120, 120, 255));
 
+	sf::RectangleShape drawButtonBG(sf::Vector2f(topMargin, topMargin));
+	drawButtonBG.setFillColor(sf::Color::White);
+	drawButtonBG.setOutlineColor(sf::Color::Red);
+	drawButtonBG.setOutlineThickness(separatorThickness);
+	drawButtonBG.setPosition(sf::Vector2f(0, 0));
+
+	sf::RectangleShape deleteButtonBG(sf::Vector2f(topMargin, topMargin));
+	deleteButtonBG.setFillColor(sf::Color::White);
+	deleteButtonBG.setOutlineColor(sf::Color::Red);
+	deleteButtonBG.setOutlineThickness(separatorThickness);
+	deleteButtonBG.setPosition(sf::Vector2f(topMargin + separatorThickness, 0));
+
+	sf::RectangleShape rotateButtonBG(sf::Vector2f(topMargin, topMargin));
+	rotateButtonBG.setFillColor(sf::Color::White);
+	rotateButtonBG.setOutlineColor(sf::Color::Red);
+	rotateButtonBG.setOutlineThickness(separatorThickness);
+	rotateButtonBG.setPosition(sf::Vector2f(2*topMargin + 2*separatorThickness, 0));
+
+	sf::Sprite drawButton;
+	drawButton.setTexture(toolbarTexture);
+	drawButton.setTextureRect(sf::IntRect(0, 0, 30, 30));
+	drawButton.setPosition(sf::Vector2f(-2 * separatorThickness, -2 * separatorThickness));
+
+	sf::Sprite deleteButton;
+	deleteButton.setTexture(toolbarTexture);
+	deleteButton.setTextureRect(sf::IntRect(30, 0, 30, 30));
+	deleteButton.setPosition(sf::Vector2f(topMargin - separatorThickness, -2 * separatorThickness));
+	
+	sf::Sprite rotateButton;
+	rotateButton.setTexture(toolbarTexture);
+	rotateButton.setTextureRect(sf::IntRect(60, 0, 30, 30));
+	rotateButton.setPosition(sf::Vector2f(2*topMargin, -2 * separatorThickness));
+
 	while (window.isOpen())
 	{
 		sf::Event event;
@@ -239,9 +343,19 @@ int main()
 						if (currentItem == 0) {
 							startConnectingVertexes(event.mouseButton.x, event.mouseButton.y);
 						}
+						else if (currentItem == 1) {
+							putResistor();
+						}
 					}
 					else if (event.mouseButton.y >= topMargin && event.mouseButton.x < leftMargin) {
 						currentItem = int(event.mouseButton.y - topMargin) / int(itemIconSize + separatorThickness);
+						isRotated = 0;
+					}
+					else if (event.mouseButton.y < topMargin) {
+						int curButton = floor(event.mouseButton.x / (topMargin + separatorThickness));
+						if (curButton == 2) {
+							isRotated ^= 1;
+						}
 					}
 				}
 			}
@@ -261,6 +375,9 @@ int main()
 		window.draw(menuBarBG);
 		window.draw(wireIconBG);
 		window.draw(resistorIconBG);
+		window.draw(drawButtonBG);
+		window.draw(deleteButtonBG);
+		window.draw(rotateButtonBG);
 		for (int i = 1; i < n; i++) {
 			vline.setPosition(sf::Vector2f(leftMargin, topMargin + editorFieldSizeY / n*i));
 			window.draw(vline);
@@ -287,6 +404,9 @@ int main()
 				}
 			}
 		}
+		for (int i = 0; i < resistors.size(); i++) {
+			drawResistor(resistors[i].first.first, resistors[i].first.second, resistors[i].second);
+		}
 		if (isStarted) {
 			if (sf::Mouse::getPosition(window).x >= leftMargin && sf::Mouse::getPosition(window).y >= topMargin) {
 				if (currentItem == 0) {
@@ -302,11 +422,13 @@ int main()
 				drawResistorPreview();
 			}
 		}
-		window.draw(clearButton);
 		window.draw(wireItem);
 		window.draw(resistorItem);
 		selectedItemBG.setPosition(sf::Vector2f(-separatorThickness, topMargin + currentItem*(itemIconSize + separatorThickness)));
 		window.draw(selectedItemBG);
+		window.draw(drawButton);
+		window.draw(deleteButton);
+		window.draw(rotateButton);
 		window.display();
 	}
 
