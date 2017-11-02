@@ -8,9 +8,9 @@
 
 float gridThickness = 5;
 float gridOutlineThickness = 2;
-float n = 12, m = 16;
-float editorFieldSizeX = 800;
-float editorFieldSizeY = 600;
+float n = 30, m = 54;
+float editorFieldSizeX = 1820;
+float editorFieldSizeY = 1030;
 float topMargin = 50;
 float leftMargin = 100;
 float separatorThickness = -5;
@@ -25,6 +25,42 @@ float batterySizeY = 4;
 float lampSizeX = 5;
 float lampSizeY = 4;
 bool mat[1000][1000][2];
+
+std::vector<std::pair<std::pair<float, float>, bool > > resistors, batteries, lamps;
+
+bool isColliding(float X1, float Y1, float X2, float Y2) {
+	if (X2 > X2) {
+		std::swap(X1, X2);
+	}
+	if (Y1 > Y2) {
+		std::swap(Y1, Y2);
+	}
+	for (int i = 0; i < resistors.size(); i++) {
+		float a = resistors[i].first.first, b = resistors[i].first.second;
+		float c = a + resistors[i].second * resistorSizeY + (1 - resistors[i].second) * resistorSizeX,
+			d = b + resistors[i].second * resistorSizeX + (1 - resistors[i].second) * resistorSizeY;
+		if (X2 > a && c > X1 && Y2 > b && d > Y1) {
+			return 1;
+		}
+	}
+	for (int i = 0; i < batteries.size(); i++) {
+		float a = batteries[i].first.first, b = batteries[i].first.second;
+		float c = a + batteries[i].second * batterySizeY + (1 - batteries[i].second) * batterySizeX,
+			d = b + batteries[i].second * batterySizeX + (1 - batteries[i].second) * batterySizeY;
+		if (X2 > a && c > X1 && Y2 > b && d > Y1) {
+			return 1;
+		}
+	}
+	for (int i = 0; i < lamps.size(); i++) {
+		float a = lamps[i].first.first, b = lamps[i].first.second;
+		float c = a + lamps[i].second * lampSizeY + (1 - lamps[i].second) * lampSizeX,
+			d = b + lamps[i].second * lampSizeX + (1 - lamps[i].second) * lampSizeY;
+		if (X2 > a && c > X1 && Y2 > b && d > Y1) {
+			return 1;
+		}
+	}
+	return 0;
+}
 
 void addLine(int x, int y, int l, int ishor) {
 	if (ishor) {
@@ -75,7 +111,7 @@ void finishConnectingVertexes(float mouseX, float mouseY) {
 	endY = round(endY * n / editorFieldSizeY);
 	connectVertexes(startX, startY, endX, endY);
 }
-sf::RenderWindow window(sf::VideoMode(leftMargin + editorFieldSizeX, topMargin + editorFieldSizeY), "Electronic circuit editor");
+sf::RenderWindow window(sf::VideoMode(leftMargin + editorFieldSizeX, topMargin + editorFieldSizeY), "Electronic circuit editor", sf::Style::Fullscreen);
 
 void drawWirePreview() {
 	sf::RectangleShape temp;
@@ -101,9 +137,9 @@ void drawWirePreview() {
 
 int currentItem = 0;
 
-void drawDottedLine(float x, float y, float length, float dotLength, int ishor) {
+void drawDottedLine(float x, float y, float length, float dotLength, int ishor, sf::Color color=sf::Color::Green) {
 	sf::RectangleShape temp;
-	temp.setFillColor(sf::Color::Green);
+	temp.setFillColor(color);
 	if (ishor) {
 		for (float curX = x; curX < x + length; curX += 2 * dotLength) {
 			temp.setSize(sf::Vector2f(std::min(dotLength, x+length-curX), gridThickness));
@@ -120,6 +156,19 @@ void drawDottedLine(float x, float y, float length, float dotLength, int ishor) 
 	}
 }
 
+void drawDottedRect(float X1, float Y1, float X2, float Y2, sf::Color color) {
+	if (X1 > X2) {
+		std::swap(X1, X2);
+	}
+	if (Y1 > Y2) {
+		std::swap(Y1, Y2);
+	}
+	drawDottedLine(X1, Y1, X2 - X1, standartDotLength, 1, color);
+	drawDottedLine(X2, Y1, Y2 - Y1, standartDotLength, 0, color);
+	drawDottedLine(X1, Y2, X2 - X1, standartDotLength, 1, color);
+	drawDottedLine(X1, Y1, Y2 - Y1, standartDotLength, 0, color);
+}
+
 void drawItemPreview(float X1, float Y1, float X2, float Y2) {
 	if (X1 > X2) {
 		std::swap(X1, X2);
@@ -127,10 +176,16 @@ void drawItemPreview(float X1, float Y1, float X2, float Y2) {
 	if (Y1 > Y2) {
 		std::swap(Y1, Y2);
 	}
-	drawDottedLine(X1, Y1, X2 - X1, standartDotLength, 1);
-	drawDottedLine(X2, Y1, Y2 - Y1, standartDotLength, 0);
-	drawDottedLine(X1, Y2, X2 - X1, standartDotLength, 1);
-	drawDottedLine(X1, Y1, Y2 - Y1, standartDotLength, 0);
+	float tX1, tX2, tY1, tY2;
+	tX1 = (X1 - leftMargin) / editorFieldSizeX * m;
+	tX2 = (X2 - leftMargin) / editorFieldSizeX * m;
+	tY1 = (Y1 - topMargin) / editorFieldSizeY * n;
+	tY2 = (Y2 - topMargin) / editorFieldSizeY * n;
+	sf::Color color = sf::Color::Green;
+	if (isColliding(tX1, tY1, tX2, tY2)) {
+		color = sf::Color::Red;
+	}
+	drawDottedRect(X1, Y1, X2, Y2, color);
 }
 void getCurrentFieldCoords(float &X, float &Y) {
 	float curX = sf::Mouse::getPosition(window).x;
@@ -181,11 +236,13 @@ void drawResistorPreview() {
 		drawItemPreview(curX, curY, curX + resistorSizeY * editorFieldSizeX / m, curY + resistorSizeX * editorFieldSizeY / n);
 }
 
-std::vector<std::pair<std::pair<float, float>, bool > > resistors;
 
 void putResistor() {
 	float curX, curY;
 	getCurrentFlooredFieldCoords(curX, curY);
+	if (isColliding(curX, curY, curX + isRotated*resistorSizeY + (1 - isRotated)*resistorSizeX, curY + isRotated*resistorSizeX + (1 - isRotated)*resistorSizeY)) {
+		return;
+	}
 	if (!isRotated) {
 		deleteInnerWires(curX, curY, curX + resistorSizeX, curY + resistorSizeY);
 	}
@@ -251,11 +308,13 @@ void drawBatteryPreview() {
 		drawItemPreview(curX, curY, curX + batterySizeY * editorFieldSizeX / m, curY + batterySizeX * editorFieldSizeY / n);
 }
 
-std::vector<std::pair<std::pair<float, float>, bool > > batteries;
 
 void putBattery() {
 	float curX, curY;
 	getCurrentFlooredFieldCoords(curX, curY);
+	if (isColliding(curX, curY, curX + isRotated*batterySizeY + (1 - isRotated)*batterySizeX, curY + isRotated*batterySizeX + (1 - isRotated)*batterySizeY)) {
+		return;
+	}
 	if (!isRotated) {
 		deleteInnerWires(curX, curY, curX + batterySizeX, curY + batterySizeY);
 	}
@@ -313,11 +372,13 @@ void drawLampPreview() {
 		drawItemPreview(curX, curY, curX + lampSizeY * editorFieldSizeX / m, curY + lampSizeX * editorFieldSizeY / n);
 }
 
-std::vector<std::pair<std::pair<float, float>, bool > > lamps;
 
 void putLamp() {
 	float curX, curY;
 	getCurrentFlooredFieldCoords(curX, curY);
+	if (isColliding(curX, curY, curX + isRotated*lampSizeY + (1 - isRotated)*lampSizeX, curY + isRotated*lampSizeX + (1 - isRotated)*lampSizeY)) {
+		return;
+	}
 	if (!isRotated) {
 		deleteInnerWires(curX, curY, curX + lampSizeX, curY + lampSizeY);
 	}
@@ -372,6 +433,43 @@ void drawLamp(float X, float Y, bool isrot) {
 		temp.setPosition(sf::Vector2f(X + (2 + 1.5 / sqrt(2)) * editorFieldSizeX / m, Y + (2.5 - 1.5 / sqrt(2)) * editorFieldSizeY / n));
 		window.draw(temp);
 	}
+}
+
+int curMode = 0;
+
+bool isSelected = 0;
+float selectionEndX = 0, selectionEndY = 0;
+
+void startSelecting() {
+	getCurrentFieldCoords(startX, startY);
+	isStarted = 1;
+	isSelected = 0;
+}
+
+void finishSelecting() {
+	getCurrentFieldCoords(selectionEndX, selectionEndY);
+	isSelected = 1;
+	isStarted = 0;
+}
+
+void drawSelection() {
+	float endX, endY;
+	if (!isSelected) {
+		getCurrentFieldCoords(endX, endY);
+	}
+	else {
+		endX = selectionEndX;
+		endY = selectionEndY;
+	}
+	drawDottedRect(startX*editorFieldSizeX / m + leftMargin, startY*editorFieldSizeY / n + topMargin, endX*editorFieldSizeX / m + leftMargin, endY*editorFieldSizeY / n + topMargin, sf::Color::Green);
+}
+
+bool isInSelection(float x, float y) {
+	x -= leftMargin;
+	x /= editorFieldSizeX / m;
+	y -= topMargin;
+	y /= editorFieldSizeY / n;
+	return isSelected && (x >= startX && x <= selectionEndX) && (y >= startY && y <= selectionEndY);
 }
 
 int launchMainWindow()
@@ -459,11 +557,11 @@ int launchMainWindow()
 	drawButtonBG.setOutlineThickness(separatorThickness);
 	drawButtonBG.setPosition(sf::Vector2f(0, 0));
 
-	sf::RectangleShape deleteButtonBG(sf::Vector2f(topMargin, topMargin));
-	deleteButtonBG.setFillColor(sf::Color::White);
-	deleteButtonBG.setOutlineColor(sf::Color::Red);
-	deleteButtonBG.setOutlineThickness(separatorThickness);
-	deleteButtonBG.setPosition(sf::Vector2f(topMargin + separatorThickness, 0));
+	sf::RectangleShape selectButtonBG(sf::Vector2f(topMargin, topMargin));
+	selectButtonBG.setFillColor(sf::Color::White);
+	selectButtonBG.setOutlineColor(sf::Color::Red);
+	selectButtonBG.setOutlineThickness(separatorThickness);
+	selectButtonBG.setPosition(sf::Vector2f(topMargin + separatorThickness, 0));
 
 	sf::RectangleShape rotateButtonBG(sf::Vector2f(topMargin, topMargin));
 	rotateButtonBG.setFillColor(sf::Color::White);
@@ -476,15 +574,21 @@ int launchMainWindow()
 	drawButton.setTextureRect(sf::IntRect(0, 0, 30, 30));
 	drawButton.setPosition(sf::Vector2f(-2 * separatorThickness, -2 * separatorThickness));
 
-	sf::Sprite deleteButton;
-	deleteButton.setTexture(toolbarTexture);
-	deleteButton.setTextureRect(sf::IntRect(30, 0, 30, 30));
-	deleteButton.setPosition(sf::Vector2f(topMargin - separatorThickness, -2 * separatorThickness));
+	sf::Sprite selectButton;
+	selectButton.setTexture(toolbarTexture);
+	selectButton.setTextureRect(sf::IntRect(30, 0, 30, 30));
+	selectButton.setPosition(sf::Vector2f(topMargin - separatorThickness, -2 * separatorThickness));
 	
 	sf::Sprite rotateButton;
 	rotateButton.setTexture(toolbarTexture);
 	rotateButton.setTextureRect(sf::IntRect(60, 0, 30, 30));
 	rotateButton.setPosition(sf::Vector2f(2*topMargin, -2 * separatorThickness));
+
+	sf::RectangleShape selectedModeBG(sf::Vector2f(topMargin + 2 * separatorThickness, topMargin + 2 * separatorThickness));
+	selectedModeBG.setFillColor(sf::Color::Transparent);
+	selectedModeBG.setOutlineColor(sf::Color(120, 120, 120, 255));
+	selectedModeBG.setOutlineThickness(separatorThickness);
+	selectedModeBG.setPosition(sf::Vector2f(-separatorThickness, -separatorThickness));
 
 	while (window.isOpen())
 	{
@@ -507,17 +611,24 @@ int launchMainWindow()
 			else if (event.type == sf::Event::MouseButtonPressed) {
 				if (event.mouseButton.button == sf::Mouse::Left) {
 					if (event.mouseButton.x >= leftMargin && event.mouseButton.y >= topMargin) {
-						if (currentItem == 0) {
-							startConnectingVertexes(event.mouseButton.x, event.mouseButton.y);
+						if (curMode == 0) {
+							if (currentItem == 0) {
+								startConnectingVertexes(event.mouseButton.x, event.mouseButton.y);
+							}
+							else if (currentItem == 1) {
+								putResistor();
+							}
+							else if (currentItem == 2) {
+								putBattery();
+							}
+							else if (currentItem == 3) {
+								putLamp();
+							}
 						}
-						else if (currentItem == 1) {
-							putResistor();
-						}
-						else if (currentItem == 2) {
-							putBattery();
-						}
-						else if (currentItem == 3) {
-							putLamp();
+						else if (curMode == 1) {
+							if (!isInSelection(event.mouseButton.x, event.mouseButton.y)) {
+								startSelecting();
+							}
 						}
 					}
 					else if (event.mouseButton.y >= topMargin && event.mouseButton.x < leftMargin) {
@@ -526,6 +637,16 @@ int launchMainWindow()
 					}
 					else if (event.mouseButton.y < topMargin) {
 						int curButton = floor(event.mouseButton.x / (topMargin + separatorThickness));
+						if (curButton == 0) {
+							curMode = 0;
+							isStarted = 0;
+							isSelected = 0;
+						}
+						else if(curButton == 1) {
+							curMode = 1;
+							isStarted = 0;
+							isSelected = 0;
+						}
 						if (curButton == 2) {
 							isRotated ^= 1;
 						}
@@ -535,8 +656,11 @@ int launchMainWindow()
 			else if (event.type == sf::Event::MouseButtonReleased) {
 				if (event.mouseButton.button == sf::Mouse::Left) {
 					if (event.mouseButton.x >= leftMargin && event.mouseButton.y >= topMargin && isStarted) {
-						if (currentItem == 0) { 
+						if (curMode == 0 && currentItem == 0) { 
 							finishConnectingVertexes(event.mouseButton.x, event.mouseButton.y); 
+						}
+						else if (curMode == 1) {
+							finishSelecting();
 						}
 					}
 				}
@@ -551,7 +675,7 @@ int launchMainWindow()
 		window.draw(batteryIconBG);
 		window.draw(lampIconBG);
 		window.draw(drawButtonBG);
-		window.draw(deleteButtonBG);
+		window.draw(selectButtonBG);
 		window.draw(rotateButtonBG);
 		for (int i = 1; i < n; i++) {
 			vline.setPosition(sf::Vector2f(leftMargin, topMargin + editorFieldSizeY / n*i));
@@ -588,25 +712,40 @@ int launchMainWindow()
 		for (int i = 0; i < lamps.size(); i++) {
 			drawLamp(lamps[i].first.first, lamps[i].first.second, lamps[i].second);
 		}
-		if (isStarted) {
-			if (sf::Mouse::getPosition(window).x >= leftMargin && sf::Mouse::getPosition(window).y >= topMargin) {
-				if (currentItem == 0) {
-					drawWirePreview();
+		if (curMode == 0) {
+			if (isStarted) {
+				if (sf::Mouse::getPosition(window).x >= leftMargin && sf::Mouse::getPosition(window).y >= topMargin) {
+					if (currentItem == 0) {
+						drawWirePreview();
+					}
+				}
+				else {
+					isStarted = 0;
 				}
 			}
-			else {
-				isStarted = 0;
+			if (sf::Mouse::getPosition(window).x >= leftMargin && sf::Mouse::getPosition(window).y >= topMargin) {
+				if (currentItem == 1) {
+					drawResistorPreview();
+				}
+				else if (currentItem == 2) {
+					drawBatteryPreview();
+				}
+				else if (currentItem == 3) {
+					drawLampPreview();
+				}
 			}
 		}
-		if (sf::Mouse::getPosition(window).x >= leftMargin && sf::Mouse::getPosition(window).y >= topMargin) {
-			if (currentItem == 1) {
-				drawResistorPreview();
+		else if (curMode == 1) {
+			if (isStarted) {
+				if (sf::Mouse::getPosition(window).x >= leftMargin && sf::Mouse::getPosition(window).y >= topMargin) {
+					drawSelection();
+				}
+				else {
+					isStarted = 0;
+				}
 			}
-			else if (currentItem == 2) {
-				drawBatteryPreview();
-			}
-			else if (currentItem == 3) {
-				drawLampPreview();
+			if (isSelected) {
+				drawSelection();
 			}
 		}
 		window.draw(wireItem);
@@ -615,8 +754,10 @@ int launchMainWindow()
 		window.draw(lampItem);
 		selectedItemBG.setPosition(sf::Vector2f(-separatorThickness, topMargin + currentItem*(itemIconSize + separatorThickness)));
 		window.draw(selectedItemBG);
+		selectedModeBG.setPosition(sf::Vector2f(-separatorThickness + curMode*(topMargin + separatorThickness), -separatorThickness));
+		window.draw(selectedModeBG);
 		window.draw(drawButton);
-		window.draw(deleteButton);
+		window.draw(selectButton);
 		window.draw(rotateButton);
 		window.display();
 	}
