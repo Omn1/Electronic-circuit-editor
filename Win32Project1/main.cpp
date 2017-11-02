@@ -6,8 +6,8 @@
 #include <cstdio>
 #include <cmath>
 
-float gridThickness = 5;
-float gridOutlineThickness = 2;
+float gridThickness = 3;
+float gridOutlineThickness = 1.2;
 float n = 30, m = 54;
 float editorFieldSizeX = 1820;
 float editorFieldSizeY = 1030;
@@ -24,9 +24,8 @@ float batterySizeX = 5;
 float batterySizeY = 4;
 float lampSizeX = 5;
 float lampSizeY = 4;
-bool mat[1000][1000][2];
 
-std::vector<std::pair<std::pair<float, float>, bool > > resistors, batteries, lamps;
+std::vector<std::pair<std::pair<float, float>, bool > > resistors, batteries, lamps, wires;
 
 bool isColliding(float X1, float Y1, float X2, float Y2) {
 	if (X2 > X2) {
@@ -39,7 +38,7 @@ bool isColliding(float X1, float Y1, float X2, float Y2) {
 		float a = resistors[i].first.first, b = resistors[i].first.second;
 		float c = a + resistors[i].second * resistorSizeY + (1 - resistors[i].second) * resistorSizeX,
 			d = b + resistors[i].second * resistorSizeX + (1 - resistors[i].second) * resistorSizeY;
-		if (X2 > a && c > X1 && Y2 > b && d > Y1) {
+		if (std::min(X2,c)>std::max(X1,a) && std::min(Y2,d)>std::max(Y1,b)) {
 			return 1;
 		}
 	}
@@ -47,7 +46,7 @@ bool isColliding(float X1, float Y1, float X2, float Y2) {
 		float a = batteries[i].first.first, b = batteries[i].first.second;
 		float c = a + batteries[i].second * batterySizeY + (1 - batteries[i].second) * batterySizeX,
 			d = b + batteries[i].second * batterySizeX + (1 - batteries[i].second) * batterySizeY;
-		if (X2 > a && c > X1 && Y2 > b && d > Y1) {
+		if (std::min(X2, c)>std::max(X1, a) && std::min(Y2, d)>std::max(Y1, b)) {
 			return 1;
 		}
 	}
@@ -55,7 +54,7 @@ bool isColliding(float X1, float Y1, float X2, float Y2) {
 		float a = lamps[i].first.first, b = lamps[i].first.second;
 		float c = a + lamps[i].second * lampSizeY + (1 - lamps[i].second) * lampSizeX,
 			d = b + lamps[i].second * lampSizeX + (1 - lamps[i].second) * lampSizeY;
-		if (X2 > a && c > X1 && Y2 > b && d > Y1) {
+		if (std::min(X2, c)>std::max(X1, a) && std::min(Y2, d)>std::max(Y1, b)) {
 			return 1;
 		}
 	}
@@ -69,7 +68,7 @@ void addLine(int x, int y, int l, int ishor) {
 			l = -l;
 		}
 		for (int i = x; i < x + l; i++) {
-			mat[i][y][0] = 1;
+			wires.push_back({ {i,y},0 });
 		}
 	}
 	else {
@@ -78,7 +77,7 @@ void addLine(int x, int y, int l, int ishor) {
 			l = -l;
 		}
 		for (int i = y; i < y + l; i++) {
-			mat[x][i][1] = 1;
+			wires.push_back({ {x,i},1 });
 		}
 	}
 }
@@ -178,9 +177,13 @@ void drawItemPreview(float X1, float Y1, float X2, float Y2) {
 	}
 	float tX1, tX2, tY1, tY2;
 	tX1 = (X1 - leftMargin) / editorFieldSizeX * m;
+	tX1 = round(tX1);
 	tX2 = (X2 - leftMargin) / editorFieldSizeX * m;
+	tX2 = round(tX2);
 	tY1 = (Y1 - topMargin) / editorFieldSizeY * n;
+	tY1 = round(tY1);
 	tY2 = (Y2 - topMargin) / editorFieldSizeY * n;
+	tY2 = round(tY2);
 	sf::Color color = sf::Color::Green;
 	if (isColliding(tX1, tY1, tX2, tY2)) {
 		color = sf::Color::Red;
@@ -209,18 +212,16 @@ void getCurrentFlooredFieldCoords(float &X, float &Y) {
 }
 
 void deleteInnerWires(int X1, int Y1, int X2, int Y2) {
-	for (int i = X1 + 1; i < X2; i++) {
-		for (int j = Y1 + 1; j < Y2; j++) {
-			mat[i][j][0] = 0;
-			mat[i][j][1] = 0;
+	std::vector<std::pair<std::pair<float, float>, bool > > twires;
+	for (int i = 0; i < wires.size(); i++) {
+		float a = wires[i].first.first, b = wires[i].first.second;
+		float c = a + (1 - wires[i].second),
+			d = b + wires[i].second;
+		if (!(X2 > a && c > X1 && Y2 > b && d > Y1)) {
+			twires.push_back(wires[i]);
 		}
 	}
-	for (int i = X1 + 1; i < X2; i++) {
-		mat[i][Y1][1] = 0;
-	}
-	for (int j = Y1 + 1; j < Y2; j++) {
-		mat[X1][j][0] = 0;
-	}
+	wires = twires;
 }
 
 bool isRotated = 0;
@@ -446,8 +447,49 @@ void startSelecting() {
 	isSelected = 0;
 }
 
+void selectItem() {
+	float curX, curY;
+	getCurrentFlooredFieldCoords(curX, curY);
+	for (int i = 0; i < resistors.size(); i++) {
+		float a = resistors[i].first.first, b = resistors[i].first.second;
+		float c = a + resistors[i].second * resistorSizeY + (1 - resistors[i].second) * resistorSizeX,
+			d = b + resistors[i].second * resistorSizeX + (1 - resistors[i].second) * resistorSizeY;
+		if (curX >= a && curX <= c && curY >= b && curY <= d) {
+			startX = a;
+			startY = b;
+			selectionEndX = c;
+			selectionEndY = d;
+		}
+	}
+	for (int i = 0; i < batteries.size(); i++) {
+		float a = batteries[i].first.first, b = batteries[i].first.second;
+		float c = a + batteries[i].second * batterySizeY + (1 - batteries[i].second) * batterySizeX,
+			d = b + batteries[i].second * batterySizeX + (1 - batteries[i].second) * batterySizeY;
+		if (curX >= a && curX <= c && curY >= b && curY <= d) {
+			startX = a;
+			startY = b;
+			selectionEndX = c;
+			selectionEndY = d;
+		}
+	}
+	for (int i = 0; i < lamps.size(); i++) {
+		float a = lamps[i].first.first, b = lamps[i].first.second;
+		float c = a + lamps[i].second * lampSizeY + (1 - lamps[i].second) * lampSizeX,
+			d = b + lamps[i].second * lampSizeX + (1 - lamps[i].second) * lampSizeY;
+		if (curX >= a && curX <= c && curY >= b && curY <= d) {
+			startX = a;
+			startY = b;
+			selectionEndX = c;
+			selectionEndY = d;
+		}
+	}
+}
+
 void finishSelecting() {
 	getCurrentFieldCoords(selectionEndX, selectionEndY);
+	if (selectionEndX == startX && selectionEndY == startY) {
+		selectItem();
+	}
 	isSelected = 1;
 	isStarted = 0;
 }
@@ -471,6 +513,48 @@ bool isInSelection(float x, float y) {
 	y /= editorFieldSizeY / n;
 	return isSelected && (x >= startX && x <= selectionEndX) && (y >= startY && y <= selectionEndY);
 }
+
+void deleteSelection() {
+	if (!isSelected)
+		return;
+	float X1 = startX, X2 = selectionEndX, Y1 = startY, Y2 = selectionEndY;
+	if (X1 > X2) {
+		std::swap(X1, X2);
+	}
+	if (Y1 > Y2) {
+		std::swap(Y1, Y2);
+	}
+	std::vector<std::pair<std::pair<float, float>, bool > > tresistors, tbatteries, tlamps;
+	deleteInnerWires(X1, Y1, X2, Y2);
+	for (int i = 0; i < resistors.size(); i++) {
+		float a = resistors[i].first.first, b = resistors[i].first.second;
+		float c = a + resistors[i].second * resistorSizeY + (1 - resistors[i].second) * resistorSizeX,
+			d = b + resistors[i].second * resistorSizeX + (1 - resistors[i].second) * resistorSizeY;
+		if (!(X2 > a && c > X1 && Y2 > b && d > Y1)) {
+			tresistors.push_back(resistors[i]);
+		}
+	}
+	for (int i = 0; i < batteries.size(); i++) {
+		float a = batteries[i].first.first, b = batteries[i].first.second;
+		float c = a + batteries[i].second * batterySizeY + (1 - batteries[i].second) * batterySizeX,
+			d = b + batteries[i].second * batterySizeX + (1 - batteries[i].second) * batterySizeY;
+		if (!(X2 > a && c > X1 && Y2 > b && d > Y1)) {
+			tbatteries.push_back(batteries[i]);
+		}
+	}
+	for (int i = 0; i < lamps.size(); i++) {
+		float a = lamps[i].first.first, b = lamps[i].first.second;
+		float c = a + lamps[i].second * lampSizeY + (1 - lamps[i].second) * lampSizeX,
+			d = b + lamps[i].second * lampSizeX + (1 - lamps[i].second) * lampSizeY;
+		if (!(X2 > a && c > X1 && Y2 > b && d > Y1)) {
+			tlamps.push_back(lamps[i]);
+		}
+	}
+	resistors = tresistors;
+	batteries = tbatteries;
+	lamps = tlamps;
+}
+
 
 int launchMainWindow()
 {
@@ -569,6 +653,12 @@ int launchMainWindow()
 	rotateButtonBG.setOutlineThickness(separatorThickness);
 	rotateButtonBG.setPosition(sf::Vector2f(2*topMargin + 2*separatorThickness, 0));
 
+	sf::RectangleShape deleteButtonBG(sf::Vector2f(topMargin, topMargin));
+	deleteButtonBG.setFillColor(sf::Color::White);
+	deleteButtonBG.setOutlineColor(sf::Color::Red);
+	deleteButtonBG.setOutlineThickness(separatorThickness);
+	deleteButtonBG.setPosition(sf::Vector2f(3 * topMargin + 3 * separatorThickness, 0));
+
 	sf::Sprite drawButton;
 	drawButton.setTexture(toolbarTexture);
 	drawButton.setTextureRect(sf::IntRect(0, 0, 30, 30));
@@ -583,6 +673,11 @@ int launchMainWindow()
 	rotateButton.setTexture(toolbarTexture);
 	rotateButton.setTextureRect(sf::IntRect(60, 0, 30, 30));
 	rotateButton.setPosition(sf::Vector2f(2*topMargin, -2 * separatorThickness));
+
+	sf::Sprite deleteButton;
+	deleteButton.setTexture(toolbarTexture);
+	deleteButton.setTextureRect(sf::IntRect(90, 0, 30, 30));
+	deleteButton.setPosition(sf::Vector2f(3 * topMargin + separatorThickness, -2 * separatorThickness));
 
 	sf::RectangleShape selectedModeBG(sf::Vector2f(topMargin + 2 * separatorThickness, topMargin + 2 * separatorThickness));
 	selectedModeBG.setFillColor(sf::Color::Transparent);
@@ -647,8 +742,11 @@ int launchMainWindow()
 							isStarted = 0;
 							isSelected = 0;
 						}
-						if (curButton == 2) {
+						else if (curButton == 2) {
 							isRotated ^= 1;
+						}
+						else if (curButton == 3) {
+							deleteSelection();
 						}
 					}
 				}
@@ -677,6 +775,7 @@ int launchMainWindow()
 		window.draw(drawButtonBG);
 		window.draw(selectButtonBG);
 		window.draw(rotateButtonBG);
+		window.draw(deleteButtonBG);
 		for (int i = 1; i < n; i++) {
 			vline.setPosition(sf::Vector2f(leftMargin, topMargin + editorFieldSizeY / n*i));
 			window.draw(vline);
@@ -689,18 +788,14 @@ int launchMainWindow()
 		temp.setFillColor(sf::Color::Black);
 		temp.setOutlineThickness(gridOutlineThickness);
 		temp.setOutlineColor(sf::Color::Black);
-		for (int i = 0; i < 1000; i++) {
-			for (int j = 0; j < 1000; j++) {
-				if (mat[i][j][0]) {
-					temp.setSize(sf::Vector2f(editorFieldSizeX / m, round(gridThickness)));
-					temp.setPosition(sf::Vector2f(leftMargin + i*editorFieldSizeX / m, topMargin + j*editorFieldSizeY / n));
-					window.draw(temp);
-				}
-				if (mat[i][j][1]) {
-					temp.setSize(sf::Vector2f(round(gridThickness), editorFieldSizeX / m));
-					temp.setPosition(sf::Vector2f(leftMargin + i*editorFieldSizeX / m, topMargin + j*editorFieldSizeY / n));
-					window.draw(temp);
-				}
+		for(int i = 0; i < wires.size(); i++){
+			if (wires[i].second==0) {
+				temp.setSize(sf::Vector2f(editorFieldSizeX / m, round(gridThickness)));
+				temp.setPosition(sf::Vector2f(leftMargin + wires[i].first.first*editorFieldSizeX / m, topMargin + wires[i].first.second*editorFieldSizeY / n));					window.draw(temp);
+			}
+			else {
+				temp.setSize(sf::Vector2f(round(gridThickness), editorFieldSizeX / m));
+				temp.setPosition(sf::Vector2f(leftMargin + wires[i].first.first*editorFieldSizeX / m, topMargin + wires[i].first.second*editorFieldSizeY / n));					window.draw(temp);
 			}
 		}
 		for (int i = 0; i < resistors.size(); i++) {
@@ -759,6 +854,7 @@ int launchMainWindow()
 		window.draw(drawButton);
 		window.draw(selectButton);
 		window.draw(rotateButton);
+		window.draw(deleteButton);
 		window.display();
 	}
 
