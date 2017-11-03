@@ -8,8 +8,8 @@
 
 float gridThickness = 3;
 float gridOutlineThickness = 1.2;
-float n = 30, m = 54;
-float editorFieldSizeX = 1820;
+float n = 30, m = 48;
+float editorFieldSizeX = 1620;
 float editorFieldSizeY = 1030;
 float topMargin = 50;
 float leftMargin = 100;
@@ -24,6 +24,7 @@ float batterySizeX = 5;
 float batterySizeY = 4;
 float lampSizeX = 5;
 float lampSizeY = 4;
+float inspectorWidth = 200;
 
 std::vector<std::pair<std::pair<float, float>, bool > > resistors, batteries, lamps, wires;
 
@@ -447,6 +448,9 @@ void startSelecting() {
 	isSelected = 0;
 }
 
+bool isItemSelected = 0;
+int selectedItemType = 0, selectedItemI = 0;
+
 void selectItem() {
 	float curX, curY;
 	getCurrentFlooredFieldCoords(curX, curY);
@@ -459,6 +463,9 @@ void selectItem() {
 			startY = b;
 			selectionEndX = c;
 			selectionEndY = d;
+			isItemSelected = 1;
+			selectedItemType = 0;
+			selectedItemI = i;
 		}
 	}
 	for (int i = 0; i < batteries.size(); i++) {
@@ -470,6 +477,9 @@ void selectItem() {
 			startY = b;
 			selectionEndX = c;
 			selectionEndY = d;
+			isItemSelected = 1;
+			selectedItemType = 1;
+			selectedItemI = i;
 		}
 	}
 	for (int i = 0; i < lamps.size(); i++) {
@@ -481,6 +491,9 @@ void selectItem() {
 			startY = b;
 			selectionEndX = c;
 			selectionEndY = d;
+			isItemSelected = 1;
+			selectedItemType = 2;
+			selectedItemI = i;
 		}
 	}
 }
@@ -647,6 +660,33 @@ void drawMovePreview() {
 	drawDottedRect(tstartX*editorFieldSizeX / m + leftMargin, tstartY*editorFieldSizeY / n + topMargin, endX*editorFieldSizeX / m + leftMargin, endY*editorFieldSizeY / n + topMargin, sf::Color::Green);
 }
 
+void rotateItem() {
+	if (selectedItemType == 0) {
+		resistors[selectedItemI].second ^= 1;
+		selectionEndX = startX + resistors[selectedItemI].second * resistorSizeY + (1 - resistors[selectedItemI].second) * resistorSizeX;
+		selectionEndY = startY + resistors[selectedItemI].second * resistorSizeX + (1 - resistors[selectedItemI].second) * resistorSizeY;
+	}
+	else if (selectedItemType == 1) {
+		batteries[selectedItemI].second ^= 1;
+		selectionEndX = startX + batteries[selectedItemI].second * batterySizeY + (1 - batteries[selectedItemI].second) * batterySizeX;
+		selectionEndY = startY + batteries[selectedItemI].second * batterySizeX + (1 - batteries[selectedItemI].second) * batterySizeY;
+	}
+	else if (selectedItemType == 2) {
+		lamps[selectedItemI].second ^= 1;
+		selectionEndX = startX + lamps[selectedItemI].second * lampSizeY + (1 - lamps[selectedItemI].second) * lampSizeX;
+		selectionEndY = startY + lamps[selectedItemI].second * lampSizeX + (1 - lamps[selectedItemI].second) * lampSizeY;
+	}
+}
+
+void drawItemInspector() {
+	sf::RectangleShape inspectorBG(sf::Vector2f(inspectorWidth, topMargin + editorFieldSizeY));
+	inspectorBG.setFillColor(sf::Color(120, 120, 120, 255));;
+	inspectorBG.setOutlineColor(sf::Color::Red);
+	inspectorBG.setOutlineThickness(separatorThickness);
+	inspectorBG.setPosition(sf::Vector2f(leftMargin + editorFieldSizeX, 0));
+	window.draw(inspectorBG);
+}
+
 int launchMainWindow()
 {
 	//AllocConsole();
@@ -688,7 +728,7 @@ int launchMainWindow()
 	sf::RectangleShape vline(sf::Vector2f(editorFieldSizeX, gridThickness));
 	sf::RectangleShape hline(sf::Vector2f(gridThickness, editorFieldSizeY));
 	sf::RectangleShape background(sf::Vector2f(leftMargin + editorFieldSizeX, topMargin + editorFieldSizeY));
-	sf::RectangleShape menuBarBG(sf::Vector2f(leftMargin + editorFieldSizeX, topMargin));
+	sf::RectangleShape menuBarBG(sf::Vector2f(leftMargin + editorFieldSizeX - separatorThickness, topMargin));
 	
 	sf::RectangleShape wireIconBG(sf::Vector2f(leftMargin, itemIconSize));
 	wireIconBG.setFillColor(sf::Color::White);
@@ -858,7 +898,12 @@ int launchMainWindow()
 							isStarted = 0;
 						}
 						else if (curButton == 3) {
-							isRotated ^= 1;
+							if (isItemSelected) {
+								rotateItem();
+							}
+							else {
+								isRotated ^= 1;
+							}
 						}
 						else if (curButton == 4) {
 							deleteSelection();
@@ -987,6 +1032,7 @@ int launchMainWindow()
 		window.draw(rotateButton);
 		window.draw(moveButton);
 		window.draw(deleteButton);
+		drawItemInspector();
 		window.display();
 	}
 
