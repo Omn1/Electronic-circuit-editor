@@ -5,21 +5,23 @@
 #include <iostream>
 #include <cstdio>
 #include <cmath>
+#include "InspectorSection.h"
 
 struct coord {
 	float x, y;
 };
 
 struct elem {
-	coord x;
-	bool y;
+	coord pos;
+	bool isRotated;
+	double resistance;
 };
 
 float gridThickness = 3;
 float gridOutlineThickness = 1.2;
-float n = 30, m = 48;
-float editorFieldSizeX = 1620;
-float editorFieldSizeY = 1030;
+float n = 12, m = 21;
+float editorFieldSizeX = 1280;
+float editorFieldSizeY = 720;
 float topMargin = 50;
 float leftMargin = 100;
 float separatorThickness = -5;
@@ -35,7 +37,7 @@ float lampSizeX = 5;
 float lampSizeY = 4;
 float inspectorWidth = 200;
 float inspectorLeftTextMargin = 10;
-float inspectorLineSize = 30;
+float inspectorLineSize = 50;
 
 std::vector<elem> resistors, batteries, lamps, wires;
 sf::Texture toolbarTexture, itemTexture;
@@ -51,25 +53,25 @@ bool isColliding(float X1, float Y1, float X2, float Y2) {
 		std::swap(Y1, Y2);
 	}
 	for (int i = 0; i < resistors.size(); i++) {
-		float a = resistors[i].x.x, b = resistors[i].x.y;
-		float c = a + resistors[i].y * resistorSizeY + (1 - resistors[i].y) * resistorSizeX,
-			d = b + resistors[i].y * resistorSizeX + (1 - resistors[i].y) * resistorSizeY;
+		float a = resistors[i].pos.x, b = resistors[i].pos.y;
+		float c = a + resistors[i].isRotated * resistorSizeY + (1 - resistors[i].isRotated) * resistorSizeX,
+			d = b + resistors[i].isRotated * resistorSizeX + (1 - resistors[i].isRotated) * resistorSizeY;
 		if (std::min(X2,c)>std::max(X1,a) && std::min(Y2,d)>std::max(Y1,b)) {
 			return 1;
 		}
 	}
 	for (int i = 0; i < batteries.size(); i++) {
-		float a = batteries[i].x.x, b = batteries[i].x.y;
-		float c = a + batteries[i].y * batterySizeY + (1 - batteries[i].y) * batterySizeX,
-			d = b + batteries[i].y * batterySizeX + (1 - batteries[i].y) * batterySizeY;
+		float a = batteries[i].pos.x, b = batteries[i].pos.y;
+		float c = a + batteries[i].isRotated * batterySizeY + (1 - batteries[i].isRotated) * batterySizeX,
+			d = b + batteries[i].isRotated * batterySizeX + (1 - batteries[i].isRotated) * batterySizeY;
 		if (std::min(X2, c)>std::max(X1, a) && std::min(Y2, d)>std::max(Y1, b)) {
 			return 1;
 		}
 	}
 	for (int i = 0; i < lamps.size(); i++) {
-		float a = lamps[i].x.x, b = lamps[i].x.y;
-		float c = a + lamps[i].y * lampSizeY + (1 - lamps[i].y) * lampSizeX,
-			d = b + lamps[i].y * lampSizeX + (1 - lamps[i].y) * lampSizeY;
+		float a = lamps[i].pos.x, b = lamps[i].pos.y;
+		float c = a + lamps[i].isRotated * lampSizeY + (1 - lamps[i].isRotated) * lampSizeX,
+			d = b + lamps[i].isRotated * lampSizeX + (1 - lamps[i].isRotated) * lampSizeY;
 		if (std::min(X2, c)>std::max(X1, a) && std::min(Y2, d)>std::max(Y1, b)) {
 			return 1;
 		}
@@ -126,7 +128,7 @@ void finishConnectingVertexes(float mouseX, float mouseY) {
 	endY = round(endY * n / editorFieldSizeY);
 	connectVertexes(startX, startY, endX, endY);
 }
-sf::RenderWindow window(sf::VideoMode(leftMargin + editorFieldSizeX, topMargin + editorFieldSizeY), "Electronic circuit editor", sf::Style::Fullscreen);
+sf::RenderWindow window(sf::VideoMode(leftMargin + editorFieldSizeX + inspectorWidth, topMargin + editorFieldSizeY), "Electronic circuit editor");
 
 void drawWirePreview() {
 	sf::RectangleShape temp;
@@ -230,9 +232,9 @@ void getCurrentFlooredFieldCoords(float &X, float &Y) {
 void deleteInnerWires(int X1, int Y1, int X2, int Y2) {
 	std::vector<elem> twires;
 	for (int i = 0; i < wires.size(); i++) {
-		float a = wires[i].x.x, b = wires[i].x.y;
-		float c = a + (1 - wires[i].y),
-			d = b + wires[i].y;
+		float a = wires[i].pos.x, b = wires[i].pos.y;
+		float c = a + (1 - wires[i].isRotated),
+			d = b + wires[i].isRotated;
 		if (!(X2 > a && c > X1 && Y2 > b && d > Y1)) {
 			twires.push_back(wires[i]);
 		}
@@ -471,9 +473,9 @@ void selectItem() {
 	getCurrentFlooredFieldCoords(curX, curY);
 	isItemSelected = 0;
 	for (int i = 0; i < resistors.size(); i++) {
-		float a = resistors[i].x.x, b = resistors[i].x.y;
-		float c = a + resistors[i].y * resistorSizeY + (1 - resistors[i].y) * resistorSizeX,
-			d = b + resistors[i].y * resistorSizeX + (1 - resistors[i].y) * resistorSizeY;
+		float a = resistors[i].pos.x, b = resistors[i].pos.y;
+		float c = a + resistors[i].isRotated * resistorSizeY + (1 - resistors[i].isRotated) * resistorSizeX,
+			d = b + resistors[i].isRotated * resistorSizeX + (1 - resistors[i].isRotated) * resistorSizeY;
 		if (curX >= a && curX <= c && curY >= b && curY <= d) {
 			startX = a;
 			startY = b;
@@ -485,9 +487,9 @@ void selectItem() {
 		}
 	}
 	for (int i = 0; i < batteries.size(); i++) {
-		float a = batteries[i].x.x, b = batteries[i].x.y;
-		float c = a + batteries[i].y * batterySizeY + (1 - batteries[i].y) * batterySizeX,
-			d = b + batteries[i].y * batterySizeX + (1 - batteries[i].y) * batterySizeY;
+		float a = batteries[i].pos.x, b = batteries[i].pos.y;
+		float c = a + batteries[i].isRotated * batterySizeY + (1 - batteries[i].isRotated) * batterySizeX,
+			d = b + batteries[i].isRotated * batterySizeX + (1 - batteries[i].isRotated) * batterySizeY;
 		if (curX >= a && curX <= c && curY >= b && curY <= d) {
 			startX = a;
 			startY = b;
@@ -499,9 +501,9 @@ void selectItem() {
 		}
 	}
 	for (int i = 0; i < lamps.size(); i++) {
-		float a = lamps[i].x.x, b = lamps[i].x.y;
-		float c = a + lamps[i].y * lampSizeY + (1 - lamps[i].y) * lampSizeX,
-			d = b + lamps[i].y * lampSizeX + (1 - lamps[i].y) * lampSizeY;
+		float a = lamps[i].pos.x, b = lamps[i].pos.y;
+		float c = a + lamps[i].isRotated * lampSizeY + (1 - lamps[i].isRotated) * lampSizeX,
+			d = b + lamps[i].isRotated * lampSizeX + (1 - lamps[i].isRotated) * lampSizeY;
 		if (curX >= a && curX <= c && curY >= b && curY <= d) {
 			startX = a;
 			startY = b;
@@ -559,25 +561,25 @@ void deleteSelection() {
 	std::vector<elem> tresistors, tbatteries, tlamps;
 	deleteInnerWires(X1, Y1, X2, Y2);
 	for (int i = 0; i < resistors.size(); i++) {
-		float a = resistors[i].x.x, b = resistors[i].x.y;
-		float c = a + resistors[i].y * resistorSizeY + (1 - resistors[i].y) * resistorSizeX,
-			d = b + resistors[i].y * resistorSizeX + (1 - resistors[i].y) * resistorSizeY;
+		float a = resistors[i].pos.x, b = resistors[i].pos.y;
+		float c = a + resistors[i].isRotated * resistorSizeY + (1 - resistors[i].isRotated) * resistorSizeX,
+			d = b + resistors[i].isRotated * resistorSizeX + (1 - resistors[i].isRotated) * resistorSizeY;
 		if (!(X2 > a && c > X1 && Y2 > b && d > Y1)) {
 			tresistors.push_back(resistors[i]);
 		}
 	}
 	for (int i = 0; i < batteries.size(); i++) {
-		float a = batteries[i].x.x, b = batteries[i].x.y;
-		float c = a + batteries[i].y * batterySizeY + (1 - batteries[i].y) * batterySizeX,
-			d = b + batteries[i].y * batterySizeX + (1 - batteries[i].y) * batterySizeY;
+		float a = batteries[i].pos.x, b = batteries[i].pos.y;
+		float c = a + batteries[i].isRotated * batterySizeY + (1 - batteries[i].isRotated) * batterySizeX,
+			d = b + batteries[i].isRotated * batterySizeX + (1 - batteries[i].isRotated) * batterySizeY;
 		if (!(X2 > a && c > X1 && Y2 > b && d > Y1)) {
 			tbatteries.push_back(batteries[i]);
 		}
 	}
 	for (int i = 0; i < lamps.size(); i++) {
-		float a = lamps[i].x.x, b = lamps[i].x.y;
-		float c = a + lamps[i].y * lampSizeY + (1 - lamps[i].y) * lampSizeX,
-			d = b + lamps[i].y * lampSizeX + (1 - lamps[i].y) * lampSizeY;
+		float a = lamps[i].pos.x, b = lamps[i].pos.y;
+		float c = a + lamps[i].isRotated * lampSizeY + (1 - lamps[i].isRotated) * lampSizeX,
+			d = b + lamps[i].isRotated * lampSizeX + (1 - lamps[i].isRotated) * lampSizeY;
 		if (!(X2 > a && c > X1 && Y2 > b && d > Y1)) {
 			tlamps.push_back(lamps[i]);
 		}
@@ -607,39 +609,39 @@ void moveSelection(float deltaX, float deltaY) {
 		std::swap(Y1, Y2);
 	}
 	for (int i = 0; i < wires.size(); i++) {
-		float a = wires[i].x.x, b = wires[i].x.y;
-		float c = a + (1 - wires[i].y),
-			d = b + wires[i].y;
+		float a = wires[i].pos.x, b = wires[i].pos.y;
+		float c = a + (1 - wires[i].isRotated),
+			d = b + wires[i].isRotated;
 		if (X2 > a && c > X1 && Y2 > b && d > Y1) {
-			wires[i].x.x += deltaX;
-			wires[i].x.y += deltaY;
+			wires[i].pos.x += deltaX;
+			wires[i].pos.y += deltaY;
 		}
 	}
 	for (int i = 0; i < resistors.size(); i++) {
-		float a = resistors[i].x.x, b = resistors[i].x.y;
-		float c = a + resistors[i].y * resistorSizeY + (1 - resistors[i].y) * resistorSizeX,
-			d = b + resistors[i].y * resistorSizeX + (1 - resistors[i].y) * resistorSizeY;
+		float a = resistors[i].pos.x, b = resistors[i].pos.y;
+		float c = a + resistors[i].isRotated * resistorSizeY + (1 - resistors[i].isRotated) * resistorSizeX,
+			d = b + resistors[i].isRotated * resistorSizeX + (1 - resistors[i].isRotated) * resistorSizeY;
 		if (X2 > a && c > X1 && Y2 > b && d > Y1) {
-			resistors[i].x.x += deltaX;
-			resistors[i].x.y += deltaY;
+			resistors[i].pos.x += deltaX;
+			resistors[i].pos.y += deltaY;
 		}
 	}
 	for (int i = 0; i < batteries.size(); i++) {
-		float a = batteries[i].x.x, b = batteries[i].x.y;
-		float c = a + batteries[i].y * batterySizeY + (1 - batteries[i].y) * batterySizeX,
-			d = b + batteries[i].y * batterySizeX + (1 - batteries[i].y) * batterySizeY;
+		float a = batteries[i].pos.x, b = batteries[i].pos.y;
+		float c = a + batteries[i].isRotated * batterySizeY + (1 - batteries[i].isRotated) * batterySizeX,
+			d = b + batteries[i].isRotated * batterySizeX + (1 - batteries[i].isRotated) * batterySizeY;
 		if (X2 > a && c > X1 && Y2 > b && d > Y1) {
-			batteries[i].x.x += deltaX;
-			batteries[i].x.y += deltaY;
+			batteries[i].pos.x += deltaX;
+			batteries[i].pos.y += deltaY;
 		}
 	}
 	for (int i = 0; i < lamps.size(); i++) {
-		float a = lamps[i].x.x, b = lamps[i].x.y;
-		float c = a + lamps[i].y * lampSizeY + (1 - lamps[i].y) * lampSizeX,
-			d = b + lamps[i].y * lampSizeX + (1 - lamps[i].y) * lampSizeY;
+		float a = lamps[i].pos.x, b = lamps[i].pos.y;
+		float c = a + lamps[i].isRotated * lampSizeY + (1 - lamps[i].isRotated) * lampSizeX,
+			d = b + lamps[i].isRotated * lampSizeX + (1 - lamps[i].isRotated) * lampSizeY;
 		if (X2 > a && c > X1 && Y2 > b && d > Y1) {
-			lamps[i].x.x += deltaX;
-			lamps[i].x.y += deltaY;
+			lamps[i].pos.x += deltaX;
+			lamps[i].pos.y += deltaY;
 		}
 	}
 }
@@ -681,55 +683,58 @@ void drawMovePreview() {
 
 void rotateItem() {
 	if (selectedItemType == 0) {
-		resistors[selectedItemI].y ^= 1;
-		selectionEndX = startX + resistors[selectedItemI].y * resistorSizeY + (1 - resistors[selectedItemI].y) * resistorSizeX;
-		selectionEndY = startY + resistors[selectedItemI].y * resistorSizeX + (1 - resistors[selectedItemI].y) * resistorSizeY;
+		resistors[selectedItemI].isRotated ^= 1;
+		selectionEndX = startX + resistors[selectedItemI].isRotated * resistorSizeY + (1 - resistors[selectedItemI].isRotated) * resistorSizeX;
+		selectionEndY = startY + resistors[selectedItemI].isRotated * resistorSizeX + (1 - resistors[selectedItemI].isRotated) * resistorSizeY;
 	}
 	else if (selectedItemType == 1) {
-		batteries[selectedItemI].y ^= 1;
-		selectionEndX = startX + batteries[selectedItemI].y * batterySizeY + (1 - batteries[selectedItemI].y) * batterySizeX;
-		selectionEndY = startY + batteries[selectedItemI].y * batterySizeX + (1 - batteries[selectedItemI].y) * batterySizeY;
+		batteries[selectedItemI].isRotated ^= 1;
+		selectionEndX = startX + batteries[selectedItemI].isRotated * batterySizeY + (1 - batteries[selectedItemI].isRotated) * batterySizeX;
+		selectionEndY = startY + batteries[selectedItemI].isRotated * batterySizeX + (1 - batteries[selectedItemI].isRotated) * batterySizeY;
 	}
 	else if (selectedItemType == 2) {
-		lamps[selectedItemI].y ^= 1;
-		selectionEndX = startX + lamps[selectedItemI].y * lampSizeY + (1 - lamps[selectedItemI].y) * lampSizeX;
-		selectionEndY = startY + lamps[selectedItemI].y * lampSizeX + (1 - lamps[selectedItemI].y) * lampSizeY;
+		lamps[selectedItemI].isRotated ^= 1;
+		selectionEndX = startX + lamps[selectedItemI].isRotated * lampSizeY + (1 - lamps[selectedItemI].isRotated) * lampSizeX;
+		selectionEndY = startY + lamps[selectedItemI].isRotated * lampSizeX + (1 - lamps[selectedItemI].isRotated) * lampSizeY;
 	}
 }
 
 void drawItemInspector() {
 	sf::RectangleShape inspectorBG(sf::Vector2f(inspectorWidth, topMargin + editorFieldSizeY));
-	inspectorBG.setFillColor(sf::Color(120, 120, 120, 255));;
+	inspectorBG.setFillColor(sf::Color::White);
 	inspectorBG.setOutlineColor(mainColor);
 	inspectorBG.setOutlineThickness(separatorThickness);
 	inspectorBG.setPosition(sf::Vector2f(leftMargin + editorFieldSizeX, 0));
 	window.draw(inspectorBG);
+	sf::RectangleShape nameTextBG(sf::Vector2f(inspectorWidth, inspectorLineSize));
+	nameTextBG.setFillColor(sf::Color::White);
+	nameTextBG.setOutlineColor(mainColor);
+	nameTextBG.setOutlineThickness(separatorThickness);
+	nameTextBG.setPosition(leftMargin + editorFieldSizeX, 0);
+	window.draw(nameTextBG);
 	sf::Text inspectorNameText("Properties:", arial);
 	inspectorNameText.setPosition(sf::Vector2f(leftMargin + editorFieldSizeX - separatorThickness + inspectorLeftTextMargin, -separatorThickness));
 	inspectorNameText.setFillColor(sf::Color::Black);
 	window.draw(inspectorNameText);
-	sf::Text itemTypeNameText;
-	itemTypeNameText.setString("Item type:");
-	itemTypeNameText.setFont(arial);
-	itemTypeNameText.setFillColor(sf::Color::Black);
-	itemTypeNameText.setPosition(sf::Vector2f(leftMargin + editorFieldSizeX - separatorThickness + inspectorLeftTextMargin, -separatorThickness + inspectorLineSize));
-	window.draw(itemTypeNameText);
-	sf::Text itemTypeText;
-	itemTypeText.setFont(arial);
-	itemTypeText.setFillColor(sf::Color::Black);
-	itemTypeText.setPosition(sf::Vector2f(leftMargin + editorFieldSizeX - separatorThickness + inspectorLeftTextMargin, -separatorThickness + 2*inspectorLineSize));
+	std::string itemType = "";
 	if (isItemSelected) {
 		if (selectedItemType == 0) {
-			itemTypeText.setString("resistor");
+			itemType = "Resistor";
 		}
 		else if (selectedItemType == 1) {
-			itemTypeText.setString("battery");
+			itemType = "Battery";
 		}
 		else if (selectedItemType == 2) {
-			itemTypeText.setString("lamp");
+			itemType = "Lamp";
 		}
 	}
-	window.draw(itemTypeText);
+	sf::Vector2f sectionSize(inspectorWidth, 2*inspectorLineSize);
+	InspectorSection elementType("Item type:", itemType, sf::Vector2f(leftMargin + editorFieldSizeX, inspectorLineSize + separatorThickness), sectionSize, separatorThickness, inspectorLineSize, mainColor, inspectorLeftTextMargin, &arial);
+	elementType.draw(&window);
+	InspectorSection elementVoltage("Voltage (V):", "", sf::Vector2f(leftMargin + editorFieldSizeX, 3*(inspectorLineSize + separatorThickness)), sectionSize, separatorThickness, inspectorLineSize, mainColor, inspectorLeftTextMargin, &arial);
+	elementVoltage.draw(&window);
+	InspectorSection elementCurrent("Current (A):", "", sf::Vector2f(leftMargin + editorFieldSizeX, 5*(inspectorLineSize + separatorThickness)), sectionSize, separatorThickness, inspectorLineSize, mainColor, inspectorLeftTextMargin, &arial);
+	elementCurrent.draw(&window);
 }
 
 int launchMainWindow()
@@ -791,9 +796,15 @@ int launchMainWindow()
 	menuBarBG.setFillColor(sf::Color::White);
 	menuBarBG.setOutlineThickness(separatorThickness);
 	menuBarBG.setOutlineColor(mainColor);
-	background.setFillColor(sf::Color::White);
-	vline.setFillColor(sf::Color(0,0,0,120));
-	hline.setFillColor(sf::Color(0,0,0,120));
+	background.setFillColor(sf::Color(240,240,240));
+	vline.setFillColor(sf::Color(120,120,120));
+	hline.setFillColor(sf::Color(120,120,120));
+
+	sf::RectangleShape itemBarBG(sf::Vector2f(leftMargin, editorFieldSizeY));
+	itemBarBG.setFillColor(sf::Color::White);
+	itemBarBG.setOutlineColor(mainColor);
+	itemBarBG.setOutlineThickness(separatorThickness);
+	itemBarBG.setPosition(sf::Vector2f(0, topMargin));
 
 	sf::RectangleShape selectedItemBG(sf::Vector2f(itemIconSize + 2 * separatorThickness, itemIconSize + 2 * separatorThickness));
 	selectedItemBG.setFillColor(sf::Color::Transparent);
@@ -872,7 +883,7 @@ int launchMainWindow()
 				float delta = event.mouseWheelScroll.delta;
 				n *= (100.f + delta) / 100.f;
 				m *= (100.f + delta) / 100.f;
-				gridThickness = round(editorFieldSizeX / m * 0.1);
+				gridThickness = round(editorFieldSizeX / m * 0.05);
 				gridThickness = std::max(gridThickness, 1.f);
 				gridOutlineThickness = gridThickness * 0.4;
 				gridOutlineThickness = std::max(gridOutlineThickness, 1.f);
@@ -969,6 +980,7 @@ int launchMainWindow()
 		window.clear();
 		window.draw(background);
 		window.draw(menuBarBG);
+		window.draw(itemBarBG);
 		window.draw(wireIconBG);
 		window.draw(resistorIconBG);
 		window.draw(batteryIconBG);
@@ -991,23 +1003,23 @@ int launchMainWindow()
 		temp.setOutlineThickness(gridOutlineThickness);
 		temp.setOutlineColor(sf::Color::Black);
 		for(int i = 0; i < wires.size(); i++){
-			if (wires[i].y==0) {
+			if (wires[i].isRotated==0) {
 				temp.setSize(sf::Vector2f(editorFieldSizeX / m, round(gridThickness)));
-				temp.setPosition(sf::Vector2f(leftMargin + wires[i].x.x*editorFieldSizeX / m, topMargin + wires[i].x.y*editorFieldSizeY / n));					window.draw(temp);
+				temp.setPosition(sf::Vector2f(leftMargin + wires[i].pos.x*editorFieldSizeX / m, topMargin + wires[i].pos.y*editorFieldSizeY / n));					window.draw(temp);
 			}
 			else {
 				temp.setSize(sf::Vector2f(round(gridThickness), editorFieldSizeX / m));
-				temp.setPosition(sf::Vector2f(leftMargin + wires[i].x.x*editorFieldSizeX / m, topMargin + wires[i].x.y*editorFieldSizeY / n));					window.draw(temp);
+				temp.setPosition(sf::Vector2f(leftMargin + wires[i].pos.x*editorFieldSizeX / m, topMargin + wires[i].pos.y*editorFieldSizeY / n));					window.draw(temp);
 			}
 		}
 		for (int i = 0; i < resistors.size(); i++) {
-			drawResistor(resistors[i].x.x, resistors[i].x.y, resistors[i].y);
+			drawResistor(resistors[i].pos.x, resistors[i].pos.y, resistors[i].isRotated);
 		}
 		for (int i = 0; i < batteries.size(); i++) {
-			drawBattery(batteries[i].x.x, batteries[i].x.y, batteries[i].y);
+			drawBattery(batteries[i].pos.x, batteries[i].pos.y, batteries[i].isRotated);
 		}
 		for (int i = 0; i < lamps.size(); i++) {
-			drawLamp(lamps[i].x.x, lamps[i].x.y, lamps[i].y);
+			drawLamp(lamps[i].pos.x, lamps[i].pos.y, lamps[i].isRotated);
 		}
 		if (curMode == 0) {
 			if (isStarted) {
