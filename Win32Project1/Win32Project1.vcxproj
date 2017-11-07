@@ -154,10 +154,13 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="InspectorSection.cpp" />
+    <ClCompile Include="ItemInspector.cpp" />
     <ClCompile Include="main.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="Editor.h" />
     <ClInclude Include="InspectorSection.h" />
+    <ClInclude Include="ItemInspector.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

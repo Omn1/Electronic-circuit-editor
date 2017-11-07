@@ -19,7 +19,8 @@ struct elem {
 
 float gridThickness = 3;
 float gridOutlineThickness = 1.2;
-float n = 12, m = 21;
+float n, m;
+float cellSize = 60;
 float editorFieldSizeX = 1280;
 float editorFieldSizeY = 720;
 float topMargin = 50;
@@ -38,11 +39,12 @@ float lampSizeY = 4;
 float inspectorWidth = 200;
 float inspectorLeftTextMargin = 10;
 float inspectorLineSize = 50;
+sf::Font arial;
+sf::Color mainColor = sf::Color(0, 120, 120);
+sf::Vector2f sectionSize(inspectorWidth, 2 * inspectorLineSize);
 
 std::vector<elem> resistors, batteries, lamps, wires;
 sf::Texture toolbarTexture, itemTexture;
-sf::Font arial;
-sf::Color mainColor = sf::Color(0,120,120);
 
 
 bool isColliding(float X1, float Y1, float X2, float Y2) {
@@ -56,7 +58,7 @@ bool isColliding(float X1, float Y1, float X2, float Y2) {
 		float a = resistors[i].pos.x, b = resistors[i].pos.y;
 		float c = a + resistors[i].isRotated * resistorSizeY + (1 - resistors[i].isRotated) * resistorSizeX,
 			d = b + resistors[i].isRotated * resistorSizeX + (1 - resistors[i].isRotated) * resistorSizeY;
-		if (std::min(X2,c)>std::max(X1,a) && std::min(Y2,d)>std::max(Y1,b)) {
+		if (std::min(X2, c)>std::max(X1, a) && std::min(Y2, d)>std::max(Y1, b)) {
 			return 1;
 		}
 	}
@@ -86,7 +88,7 @@ void addLine(int x, int y, int l, int ishor) {
 			l = -l;
 		}
 		for (int i = x; i < x + l; i++) {
-			wires.push_back({ {(float)i,(float)y},0 });
+			wires.push_back({ { (float)i,(float)y },0 });
 		}
 	}
 	else {
@@ -95,7 +97,7 @@ void addLine(int x, int y, int l, int ishor) {
 			l = -l;
 		}
 		for (int i = y; i < y + l; i++) {
-			wires.push_back({ {(float)x,(float)i},1 });
+			wires.push_back({ { (float)x,(float)i },1 });
 		}
 	}
 }
@@ -129,7 +131,7 @@ void finishConnectingVertexes(float mouseX, float mouseY) {
 	connectVertexes(startX, startY, endX, endY);
 }
 sf::RenderWindow window(sf::VideoMode(leftMargin + editorFieldSizeX + inspectorWidth, topMargin + editorFieldSizeY), "Electronic circuit editor");
-
+sf::View view(window.getDefaultView());
 void drawWirePreview() {
 	sf::RectangleShape temp;
 	temp.setOutlineThickness(gridOutlineThickness);
@@ -154,12 +156,12 @@ void drawWirePreview() {
 
 int currentItem = 0;
 
-void drawDottedLine(float x, float y, float length, float dotLength, int ishor, sf::Color color=sf::Color::Green) {
+void drawDottedLine(float x, float y, float length, float dotLength, int ishor, sf::Color color = sf::Color::Green) {
 	sf::RectangleShape temp;
 	temp.setFillColor(color);
 	if (ishor) {
 		for (float curX = x; curX < x + length; curX += 2 * dotLength) {
-			temp.setSize(sf::Vector2f(std::min(dotLength, x+length-curX), gridThickness));
+			temp.setSize(sf::Vector2f(std::min(dotLength, x + length - curX), gridThickness));
 			temp.setPosition(sf::Vector2f(curX, y));
 			window.draw(temp);
 		}
@@ -249,7 +251,7 @@ void drawResistorPreview() {
 	getCurrentFlooredFieldCoords(curX, curY);
 	curX = curX*editorFieldSizeX / m + leftMargin;
 	curY = curY*editorFieldSizeY / n + topMargin;
-	if(!isRotated)
+	if (!isRotated)
 		drawItemPreview(curX, curY, curX + resistorSizeX * editorFieldSizeX / m, curY + resistorSizeY * editorFieldSizeY / n);
 	else
 		drawItemPreview(curX, curY, curX + resistorSizeY * editorFieldSizeX / m, curY + resistorSizeX * editorFieldSizeY / n);
@@ -268,7 +270,7 @@ void putResistor() {
 	else {
 		deleteInnerWires(curX, curY, curX + resistorSizeY, curY + resistorSizeX);
 	}
-	resistors.push_back({ {curX,curY}, isRotated });
+	resistors.push_back({ { curX,curY }, isRotated });
 }
 
 void drawResistor(float X, float Y, bool isrot) {
@@ -728,20 +730,58 @@ void drawItemInspector() {
 			itemType = "Lamp";
 		}
 	}
-	sf::Vector2f sectionSize(inspectorWidth, 2*inspectorLineSize);
-	InspectorSection elementType("Item type:", itemType, sf::Vector2f(leftMargin + editorFieldSizeX, inspectorLineSize + separatorThickness), sectionSize, separatorThickness, inspectorLineSize, mainColor, inspectorLeftTextMargin, &arial);
+	InspectorSection elementType("Item type:", itemType, sf::Vector2f(leftMargin + editorFieldSizeX, inspectorLineSize + separatorThickness), sectionSize);
 	elementType.draw(&window);
-	InspectorSection elementVoltage("Voltage (V):", "", sf::Vector2f(leftMargin + editorFieldSizeX, 3*(inspectorLineSize + separatorThickness)), sectionSize, separatorThickness, inspectorLineSize, mainColor, inspectorLeftTextMargin, &arial);
+	InspectorSection elementVoltage("Voltage (V):", "", sf::Vector2f(leftMargin + editorFieldSizeX, 3 * (inspectorLineSize + separatorThickness)), sectionSize);
 	elementVoltage.draw(&window);
-	InspectorSection elementCurrent("Current (A):", "", sf::Vector2f(leftMargin + editorFieldSizeX, 5*(inspectorLineSize + separatorThickness)), sectionSize, separatorThickness, inspectorLineSize, mainColor, inspectorLeftTextMargin, &arial);
+	InspectorSection elementCurrent("Current (A):", "", sf::Vector2f(leftMargin + editorFieldSizeX, 5 * (inspectorLineSize + separatorThickness)), sectionSize);
 	elementCurrent.draw(&window);
+}
+
+void resetFieldSize() {
+	editorFieldSizeX = window.getSize().x - leftMargin - inspectorWidth;
+	editorFieldSizeY = window.getSize().y - topMargin;
+	n = editorFieldSizeY / cellSize;
+	m = editorFieldSizeX / cellSize;
+}
+
+void drawDynamicBG() {
+	sf::RectangleShape vline(sf::Vector2f(editorFieldSizeX, gridThickness));
+	sf::RectangleShape hline(sf::Vector2f(gridThickness, editorFieldSizeY));
+	sf::RectangleShape background(sf::Vector2f(leftMargin + editorFieldSizeX, topMargin + editorFieldSizeY));
+	sf::RectangleShape menuBarBG(sf::Vector2f(leftMargin + editorFieldSizeX - separatorThickness, topMargin));
+	menuBarBG.setFillColor(sf::Color::White);
+	menuBarBG.setOutlineThickness(separatorThickness);
+	menuBarBG.setOutlineColor(mainColor);
+	background.setFillColor(sf::Color(240, 240, 240));
+	vline.setFillColor(sf::Color(120, 120, 120));
+	hline.setFillColor(sf::Color(120, 120, 120));
+	vline.setSize(sf::Vector2f(editorFieldSizeX, gridThickness));
+	hline.setSize(sf::Vector2f(gridThickness, editorFieldSizeY));
+	sf::RectangleShape itemBarBG(sf::Vector2f(leftMargin, editorFieldSizeY));
+	itemBarBG.setFillColor(sf::Color::White);
+	itemBarBG.setOutlineColor(mainColor);
+	itemBarBG.setOutlineThickness(separatorThickness);
+	itemBarBG.setPosition(sf::Vector2f(0, topMargin));
+	window.draw(background);
+	window.draw(menuBarBG);
+	window.draw(itemBarBG);
+	for (int i = 1; i < n; i++) {
+		vline.setPosition(sf::Vector2f(leftMargin, topMargin + editorFieldSizeY / n*i));
+		window.draw(vline);
+	}
+	for (int i = 1; i < m; i++) {
+		hline.setPosition(sf::Vector2f(leftMargin + editorFieldSizeX / m*i, topMargin));
+		window.draw(hline);
+	}
 }
 
 int launchMainWindow()
 {
 	//AllocConsole();
 	//freopen("CONOUT$", "w", stdout);
-	
+
+	resetFieldSize();
 
 	sf::Sprite wireItem;
 	wireItem.setTexture(itemTexture);
@@ -764,47 +804,30 @@ int launchMainWindow()
 	lampItem.setPosition(sf::Vector2f(itemLeftMargin - separatorThickness, topMargin + itemTopMargin + 3 * (itemIconSize + separatorThickness)));
 
 
-	sf::RectangleShape vline(sf::Vector2f(editorFieldSizeX, gridThickness));
-	sf::RectangleShape hline(sf::Vector2f(gridThickness, editorFieldSizeY));
-	sf::RectangleShape background(sf::Vector2f(leftMargin + editorFieldSizeX, topMargin + editorFieldSizeY));
-	sf::RectangleShape menuBarBG(sf::Vector2f(leftMargin + editorFieldSizeX - separatorThickness, topMargin));
-	
 	sf::RectangleShape wireIconBG(sf::Vector2f(leftMargin, itemIconSize));
 	wireIconBG.setFillColor(sf::Color::White);
 	wireIconBG.setOutlineColor(mainColor);
 	wireIconBG.setOutlineThickness(separatorThickness);
-	wireIconBG.setPosition(sf::Vector2f(0, topMargin+separatorThickness));
+	wireIconBG.setPosition(sf::Vector2f(0, topMargin + separatorThickness));
 
 	sf::RectangleShape resistorIconBG(sf::Vector2f(leftMargin, itemIconSize));
 	resistorIconBG.setFillColor(sf::Color::White);
 	resistorIconBG.setOutlineColor(mainColor);
 	resistorIconBG.setOutlineThickness(separatorThickness);
-	resistorIconBG.setPosition(sf::Vector2f(0, topMargin + 2*separatorThickness + itemIconSize));
+	resistorIconBG.setPosition(sf::Vector2f(0, topMargin + 2 * separatorThickness + itemIconSize));
 
 	sf::RectangleShape batteryIconBG(sf::Vector2f(leftMargin, itemIconSize));
 	batteryIconBG.setFillColor(sf::Color::White);
 	batteryIconBG.setOutlineColor(mainColor);
 	batteryIconBG.setOutlineThickness(separatorThickness);
 	batteryIconBG.setPosition(sf::Vector2f(0, topMargin + 3 * separatorThickness + 2 * itemIconSize));
-	
+
 	sf::RectangleShape lampIconBG(sf::Vector2f(leftMargin, itemIconSize));
 	lampIconBG.setFillColor(sf::Color::White);
 	lampIconBG.setOutlineColor(mainColor);
 	lampIconBG.setOutlineThickness(separatorThickness);
 	lampIconBG.setPosition(sf::Vector2f(0, topMargin + 4 * separatorThickness + 3 * itemIconSize));
 
-	menuBarBG.setFillColor(sf::Color::White);
-	menuBarBG.setOutlineThickness(separatorThickness);
-	menuBarBG.setOutlineColor(mainColor);
-	background.setFillColor(sf::Color(240,240,240));
-	vline.setFillColor(sf::Color(120,120,120));
-	hline.setFillColor(sf::Color(120,120,120));
-
-	sf::RectangleShape itemBarBG(sf::Vector2f(leftMargin, editorFieldSizeY));
-	itemBarBG.setFillColor(sf::Color::White);
-	itemBarBG.setOutlineColor(mainColor);
-	itemBarBG.setOutlineThickness(separatorThickness);
-	itemBarBG.setPosition(sf::Vector2f(0, topMargin));
 
 	sf::RectangleShape selectedItemBG(sf::Vector2f(itemIconSize + 2 * separatorThickness, itemIconSize + 2 * separatorThickness));
 	selectedItemBG.setFillColor(sf::Color::Transparent);
@@ -850,11 +873,11 @@ int launchMainWindow()
 	selectButton.setTexture(toolbarTexture);
 	selectButton.setTextureRect(sf::IntRect(30, 0, 30, 30));
 	selectButton.setPosition(sf::Vector2f(topMargin - separatorThickness, -2 * separatorThickness));
-	
+
 	sf::Sprite rotateButton;
 	rotateButton.setTexture(toolbarTexture);
 	rotateButton.setTextureRect(sf::IntRect(60, 0, 30, 30));
-	rotateButton.setPosition(sf::Vector2f(3*topMargin + separatorThickness, -2 * separatorThickness));
+	rotateButton.setPosition(sf::Vector2f(3 * topMargin + separatorThickness, -2 * separatorThickness));
 
 	sf::Sprite moveButton;
 	moveButton.setTexture(toolbarTexture);
@@ -875,20 +898,23 @@ int launchMainWindow()
 	while (window.isOpen())
 	{
 		sf::Event event;
+		resetFieldSize();
 		while (window.pollEvent(event))
 		{
 			if (event.type == sf::Event::Closed)
 				window.close();
+			else if (event.type == sf::Event::Resized)
+				window.setView(view = sf::View(sf::FloatRect(0.f, 0.f,
+					static_cast<float>(window.getSize().x),
+					static_cast<float>(window.getSize().y))));
 			else if (event.type == sf::Event::MouseWheelScrolled) {
 				float delta = event.mouseWheelScroll.delta;
-				n *= (100.f + delta) / 100.f;
-				m *= (100.f + delta) / 100.f;
+				cellSize *= (100.f - delta) / 100.f;
 				gridThickness = round(editorFieldSizeX / m * 0.05);
 				gridThickness = std::max(gridThickness, 1.f);
 				gridOutlineThickness = gridThickness * 0.4;
 				gridOutlineThickness = std::max(gridOutlineThickness, 1.f);
-				vline.setSize(sf::Vector2f(editorFieldSizeX, gridThickness));
-				hline.setSize(sf::Vector2f(gridThickness, editorFieldSizeY));
+				resetFieldSize();
 			}
 			else if (event.type == sf::Event::MouseButtonPressed) {
 				if (event.mouseButton.button == sf::Mouse::Left) {
@@ -934,7 +960,7 @@ int launchMainWindow()
 							isSelected = 0;
 							isItemSelected = 0;
 						}
-						else if(curButton == 1) {
+						else if (curButton == 1) {
 							curMode = 1;
 							isStarted = 0;
 							isSelected = 0;
@@ -963,8 +989,8 @@ int launchMainWindow()
 			else if (event.type == sf::Event::MouseButtonReleased) {
 				if (event.mouseButton.button == sf::Mouse::Left) {
 					if (event.mouseButton.x >= leftMargin && event.mouseButton.y >= topMargin) {
-						if (curMode == 0 && currentItem == 0 && isStarted) { 
-							finishConnectingVertexes(event.mouseButton.x, event.mouseButton.y); 
+						if (curMode == 0 && currentItem == 0 && isStarted) {
+							finishConnectingVertexes(event.mouseButton.x, event.mouseButton.y);
 						}
 						else if (curMode == 1 && isStarted) {
 							finishSelecting();
@@ -978,9 +1004,7 @@ int launchMainWindow()
 		}
 
 		window.clear();
-		window.draw(background);
-		window.draw(menuBarBG);
-		window.draw(itemBarBG);
+		drawDynamicBG();
 		window.draw(wireIconBG);
 		window.draw(resistorIconBG);
 		window.draw(batteryIconBG);
@@ -990,21 +1014,13 @@ int launchMainWindow()
 		window.draw(rotateButtonBG);
 		window.draw(moveButtonBG);
 		window.draw(deleteButtonBG);
-		for (int i = 1; i < n; i++) {
-			vline.setPosition(sf::Vector2f(leftMargin, topMargin + editorFieldSizeY / n*i));
-			window.draw(vline);
-		}
-		for (int i = 1; i < m; i++) {
-			hline.setPosition(sf::Vector2f(leftMargin + editorFieldSizeX / m*i, topMargin));
-			window.draw(hline);
-		}
 		sf::RectangleShape temp;
 		temp.setFillColor(sf::Color::Black);
 		temp.setOutlineThickness(gridOutlineThickness);
 		temp.setOutlineColor(sf::Color::Black);
-		for(int i = 0; i < wires.size(); i++){
-			if (wires[i].isRotated==0) {
-				temp.setSize(sf::Vector2f(editorFieldSizeX / m, round(gridThickness)));
+		for (int i = 0; i < wires.size(); i++) {
+			if (wires[i].isRotated == 0) {
+				temp.setSize(sf::Vector2f(editorFieldSizeX / m, roundf(gridThickness)));
 				temp.setPosition(sf::Vector2f(leftMargin + wires[i].pos.x*editorFieldSizeX / m, topMargin + wires[i].pos.y*editorFieldSizeY / n));					window.draw(temp);
 			}
 			else {
@@ -1090,7 +1106,7 @@ int launchMainWindow()
 }
 
 void launchStartingWindow() {
-	sf::RenderWindow startWindow(sf::VideoMode(800,600), "Electronic circuit editor");
+	sf::RenderWindow startWindow(sf::VideoMode(800, 600), "Electronic circuit editor");
 	sf::Texture startWindowTexture;
 	if (!startWindowTexture.loadFromFile("start-window-texture.png")) {
 		return;

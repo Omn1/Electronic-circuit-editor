@@ -21,9 +21,18 @@
     <ClCompile Include="InspectorSection.cpp">
       <Filter>Файлы исходного кода</Filter>
     </ClCompile>
+    <ClCompile Include="ItemInspector.cpp">
+      <Filter>Файлы исходного кода</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="InspectorSection.h">
+      <Filter>Заголовочные файлы</Filter>
+    </ClInclude>
+    <ClInclude Include="ItemInspector.h">
+      <Filter>Заголовочные файлы</Filter>
+    </ClInclude>
+    <ClInclude Include="Editor.h">
       <Filter>Заголовочные файлы</Filter>
     </ClInclude>
   </ItemGroup>
