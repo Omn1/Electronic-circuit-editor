@@ -13,6 +13,7 @@ float gridThickness = 3;
 float gridOutlineThickness = 1.2;
 float n, m;
 float cellSize = 60;
+float standartCellSize = 60;
 float editorFieldSizeX = 1280;
 float editorFieldSizeY = 720;
 float topMargin = 50;
@@ -34,6 +35,9 @@ float inspectorLineSize = 50;
 sf::Font arial;
 sf::Color mainColor = sf::Color(0, 120, 120);
 sf::Vector2f sectionSize = sf::Vector2f(inspectorWidth, 2 * inspectorLineSize);
+sf::Texture *resistorTexture = new sf::Texture();
+sf::Texture *batteryTexture = new sf::Texture();
+sf::Texture *lampTexture = new sf::Texture();
 
 std::vector<Resistor> resistors;
 std::vector<Battery> batteries;
@@ -1012,6 +1016,15 @@ int main() {
 		isError = 1;
 	}
 	if (!arial.loadFromFile("arial.ttf")) {
+		isError = 1;
+	}
+	if (!resistorTexture->loadFromFile("resistor.png")) {
+		isError = 1;
+	}
+	if (!batteryTexture->loadFromFile("battery.png")) {
+		isError = 1;
+	}
+	if (!lampTexture->loadFromFile("lamp.png")) {
 		isError = 1;
 	}
 	if (isError) {

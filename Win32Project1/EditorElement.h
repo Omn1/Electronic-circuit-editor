@@ -7,7 +7,9 @@ public:
 	coord pos;
 	int isRotated;
 	double resistance;
-	virtual void draw(sf::RenderWindow * window);
+    float sizeX, sizeY;
+	void draw(sf::RenderWindow * window);
+	sf::Texture *texture;
 	EditorElement();
 	EditorElement(coord pos, int isRotated);
 	~EditorElement();
@@ -16,7 +18,7 @@ public:
 class Resistor : public EditorElement
 {
 public:
-	void draw(sf::RenderWindow * window);
+	//void draw(sf::RenderWindow * window);
 	Resistor();
 	Resistor(coord posT, int isRotatedT);
 };
@@ -24,7 +26,7 @@ public:
 class Battery : public EditorElement
 {
 public:
-	void draw(sf::RenderWindow * window);
+	//void draw(sf::RenderWindow * window);
 	Battery();
 	Battery(coord posT, int isRotatedT);
 };
@@ -32,7 +34,7 @@ public:
 class Lamp : public EditorElement
 {
 public:
-	void draw(sf::RenderWindow * window);
+	//void draw(sf::RenderWindow * window);
 	Lamp();
 	Lamp(coord posT, int isRotatedT);
 };

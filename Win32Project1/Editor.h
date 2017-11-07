@@ -5,6 +5,7 @@ extern float gridThickness;
 extern float gridOutlineThickness;
 extern float n, m;
 extern float cellSize;
+extern float standartCellSize;
 extern float editorFieldSizeX;
 extern float editorFieldSizeY;
 extern float topMargin;
@@ -29,3 +30,4 @@ extern sf::Vector2f sectionSize;
 struct coord {
 	float x, y;
 };
+extern sf::Texture *resistorTexture, *batteryTexture, *lampTexture;
