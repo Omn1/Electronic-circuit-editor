@@ -153,12 +153,14 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="EditorElement.cpp" />
     <ClCompile Include="InspectorSection.cpp" />
     <ClCompile Include="ItemInspector.cpp" />
     <ClCompile Include="main.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Editor.h" />
+    <ClInclude Include="EditorElement.h" />
     <ClInclude Include="InspectorSection.h" />
     <ClInclude Include="ItemInspector.h" />
   </ItemGroup>

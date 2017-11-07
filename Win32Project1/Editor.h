@@ -25,4 +25,7 @@ extern float inspectorLeftTextMargin;
 extern float inspectorLineSize;
 extern sf::Font arial;
 extern sf::Color mainColor;
-extern sf::Vector2f;
+extern sf::Vector2f sectionSize;
+struct coord {
+	float x, y;
+};

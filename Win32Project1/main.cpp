@@ -6,16 +6,8 @@
 #include <cstdio>
 #include <cmath>
 #include "InspectorSection.h"
-
-struct coord {
-	float x, y;
-};
-
-struct elem {
-	coord pos;
-	bool isRotated;
-	double resistance;
-};
+#include "Editor.h"
+#include "EditorElement.h"
 
 float gridThickness = 3;
 float gridOutlineThickness = 1.2;
@@ -41,9 +33,12 @@ float inspectorLeftTextMargin = 10;
 float inspectorLineSize = 50;
 sf::Font arial;
 sf::Color mainColor = sf::Color(0, 120, 120);
-sf::Vector2f sectionSize(inspectorWidth, 2 * inspectorLineSize);
+sf::Vector2f sectionSize = sf::Vector2f(inspectorWidth, 2 * inspectorLineSize);
 
-std::vector<elem> resistors, batteries, lamps, wires;
+std::vector<Resistor> resistors;
+std::vector<Battery> batteries;
+std::vector<Lamp> lamps;
+std::vector<EditorElement> wires;
 sf::Texture toolbarTexture, itemTexture;
 
 
@@ -88,7 +83,7 @@ void addLine(int x, int y, int l, int ishor) {
 			l = -l;
 		}
 		for (int i = x; i < x + l; i++) {
-			wires.push_back({ { (float)i,(float)y },0 });
+			wires.push_back(EditorElement({ (float)i,(float)y }, 0));
 		}
 	}
 	else {
@@ -97,7 +92,7 @@ void addLine(int x, int y, int l, int ishor) {
 			l = -l;
 		}
 		for (int i = y; i < y + l; i++) {
-			wires.push_back({ { (float)x,(float)i },1 });
+			wires.push_back(EditorElement({ (float)x,(float)i }, 1));
 		}
 	}
 }
@@ -232,7 +227,7 @@ void getCurrentFlooredFieldCoords(float &X, float &Y) {
 }
 
 void deleteInnerWires(int X1, int Y1, int X2, int Y2) {
-	std::vector<elem> twires;
+	std::vector<EditorElement> twires;
 	for (int i = 0; i < wires.size(); i++) {
 		float a = wires[i].pos.x, b = wires[i].pos.y;
 		float c = a + (1 - wires[i].isRotated),
@@ -270,52 +265,7 @@ void putResistor() {
 	else {
 		deleteInnerWires(curX, curY, curX + resistorSizeY, curY + resistorSizeX);
 	}
-	resistors.push_back({ { curX,curY }, isRotated });
-}
-
-void drawResistor(float X, float Y, bool isrot) {
-	X *= editorFieldSizeX / m;
-	X += leftMargin;
-	Y *= editorFieldSizeY / n;
-	Y += topMargin;
-	sf::RectangleShape temp;
-	temp.setFillColor(sf::Color::Black);
-	temp.setOutlineColor(sf::Color::Black);
-	temp.setOutlineThickness(gridOutlineThickness);
-	if (!isrot) {
-		temp.setSize(sf::Vector2f(editorFieldSizeX / m, gridThickness));
-		temp.setPosition(sf::Vector2f(X, Y + editorFieldSizeY / n));
-		window.draw(temp);
-		temp.setPosition(sf::Vector2f(X + 4 * editorFieldSizeX / m, Y + editorFieldSizeY / n));
-		window.draw(temp);
-		temp.setSize(sf::Vector2f(3 * editorFieldSizeX / m, gridThickness));
-		temp.setPosition(sf::Vector2f(X + editorFieldSizeX / m, Y + 0.5*editorFieldSizeY / n));
-		window.draw(temp);
-		temp.setPosition(sf::Vector2f(X + editorFieldSizeX / m, Y + 1.5*editorFieldSizeY / n));
-		window.draw(temp);
-		temp.setSize(sf::Vector2f(gridThickness, editorFieldSizeY / n));
-		temp.setPosition(sf::Vector2f(X + editorFieldSizeX / m, Y + 0.5*editorFieldSizeY / n));
-		window.draw(temp);
-		temp.setPosition(sf::Vector2f(X + 4 * editorFieldSizeX / m, Y + 0.5*editorFieldSizeY / n));
-		window.draw(temp);
-	}
-	else {
-		temp.setSize(sf::Vector2f(gridThickness, editorFieldSizeY / n));
-		temp.setPosition(sf::Vector2f(X + editorFieldSizeX / m, Y));
-		window.draw(temp);
-		temp.setPosition(sf::Vector2f(X + editorFieldSizeX / m, Y + 4 * editorFieldSizeY / n));
-		window.draw(temp);
-		temp.setSize(sf::Vector2f(gridThickness, 3 * editorFieldSizeY / n));
-		temp.setPosition(sf::Vector2f(X + 0.5 * editorFieldSizeX / m, Y + editorFieldSizeY / n));
-		window.draw(temp);
-		temp.setPosition(sf::Vector2f(X + 1.5 * editorFieldSizeX / m, Y + editorFieldSizeY / n));
-		window.draw(temp);
-		temp.setSize(sf::Vector2f(editorFieldSizeX / m, gridThickness));
-		temp.setPosition(sf::Vector2f(X + 0.5 * editorFieldSizeX / m, Y + editorFieldSizeY / n));
-		window.draw(temp);
-		temp.setPosition(sf::Vector2f(X + 0.5 * editorFieldSizeX / m, Y + 4 * editorFieldSizeY / n));
-		window.draw(temp);
-	}
+	resistors.push_back(Resistor({ curX, curY }, isRotated));
 }
 
 void drawBatteryPreview() {
@@ -345,43 +295,6 @@ void putBattery() {
 	batteries.push_back({ { curX,curY }, isRotated });
 }
 
-void drawBattery(float X, float Y, bool isrot) {
-	X *= editorFieldSizeX / m;
-	X += leftMargin;
-	Y *= editorFieldSizeY / n;
-	Y += topMargin;
-	sf::RectangleShape temp;
-	temp.setFillColor(sf::Color::Black);
-	temp.setOutlineColor(sf::Color::Black);
-	temp.setOutlineThickness(gridOutlineThickness);
-	if (!isrot) {
-		temp.setSize(sf::Vector2f(2 * editorFieldSizeX / m, gridThickness));
-		temp.setPosition(sf::Vector2f(X, Y + 2 * editorFieldSizeY / n));
-		window.draw(temp);
-		temp.setPosition(sf::Vector2f(X + 3 * editorFieldSizeX / m, Y + 2 * editorFieldSizeY / n));
-		window.draw(temp);
-		temp.setSize(sf::Vector2f(gridThickness, 3 * editorFieldSizeY / n));
-		temp.setPosition(sf::Vector2f(X + 2 * editorFieldSizeX / m, Y + 0.5 * editorFieldSizeY / n));
-		window.draw(temp);
-		temp.setSize(sf::Vector2f(gridThickness, editorFieldSizeY / n));
-		temp.setPosition(sf::Vector2f(X + 3 * editorFieldSizeX / m, Y + 1.5 * editorFieldSizeY / n));
-		window.draw(temp);
-	}
-	else {
-		temp.setSize(sf::Vector2f(gridThickness, 2 * editorFieldSizeY / n));
-		temp.setPosition(sf::Vector2f(X + 2 * editorFieldSizeX / m, Y));
-		window.draw(temp);
-		temp.setPosition(sf::Vector2f(X + 2 * editorFieldSizeX / m, Y + 3 * editorFieldSizeY / n));
-		window.draw(temp);
-		temp.setSize(sf::Vector2f(3 * editorFieldSizeX / m, gridThickness));
-		temp.setPosition(sf::Vector2f(X + 0.5 * editorFieldSizeX / m, Y + 2 * editorFieldSizeY / n));
-		window.draw(temp);
-		temp.setSize(sf::Vector2f(editorFieldSizeX / m, gridThickness));
-		temp.setPosition(sf::Vector2f(X + 1.5 * editorFieldSizeX / m, Y + 3 * editorFieldSizeY / n));
-		window.draw(temp);
-	}
-}
-
 void drawLampPreview() {
 	float curX, curY;
 	getCurrentFlooredFieldCoords(curX, curY);
@@ -406,54 +319,7 @@ void putLamp() {
 	else {
 		deleteInnerWires(curX, curY, curX + lampSizeY, curY + lampSizeX);
 	}
-	lamps.push_back({ { curX,curY }, isRotated });
-}
-
-void drawLamp(float X, float Y, bool isrot) {
-	X *= editorFieldSizeX / m;
-	X += leftMargin;
-	Y *= editorFieldSizeY / n;
-	Y += topMargin;
-	sf::RectangleShape temp;
-	temp.setFillColor(sf::Color::Black);
-	temp.setOutlineColor(sf::Color::Black);
-	temp.setOutlineThickness(gridOutlineThickness);
-	sf::CircleShape tempcir(1.5 * editorFieldSizeX / m);
-	tempcir.setFillColor(sf::Color::Transparent);
-	tempcir.setOutlineColor(sf::Color::Black);
-	tempcir.setOutlineThickness(gridThickness + gridOutlineThickness);
-	if (!isrot) {
-		temp.setSize(sf::Vector2f(editorFieldSizeX / m, gridThickness));
-		temp.setPosition(sf::Vector2f(X, Y + 2 * editorFieldSizeY / n));
-		window.draw(temp);
-		temp.setPosition(sf::Vector2f(X + 4 * editorFieldSizeX / m, Y + 2 * editorFieldSizeY / n));
-		window.draw(temp);
-		tempcir.setPosition(sf::Vector2f(X + editorFieldSizeX / m, Y + 0.5 * editorFieldSizeY / n));
-		window.draw(tempcir);
-		temp.setSize(sf::Vector2f(3 * editorFieldSizeX / m, gridThickness));
-		temp.rotate(45);
-		temp.setPosition(sf::Vector2f(X + (2.5 - 1.5 / sqrt(2)) * editorFieldSizeX / m, Y + (2 - 1.5 / sqrt(2)) * editorFieldSizeY / n));
-		window.draw(temp);
-		temp.rotate(90);
-		temp.setPosition(sf::Vector2f(X + (2.5 + 1.5 / sqrt(2)) * editorFieldSizeX / m, Y + (2 - 1.5 / sqrt(2)) * editorFieldSizeY / n));
-		window.draw(temp);
-	}
-	else {
-		temp.setSize(sf::Vector2f(gridThickness, editorFieldSizeY / n));
-		temp.setPosition(sf::Vector2f(X + 2 * editorFieldSizeX / m, Y));
-		window.draw(temp);
-		temp.setPosition(sf::Vector2f(X + 2 * editorFieldSizeX / m, Y + 4 * editorFieldSizeY / n));
-		window.draw(temp);
-		tempcir.setPosition(sf::Vector2f(X + 0.5 * editorFieldSizeX / m, Y + editorFieldSizeY / n));
-		window.draw(tempcir);
-		temp.setSize(sf::Vector2f(3 * editorFieldSizeX / m, gridThickness));
-		temp.rotate(45);
-		temp.setPosition(sf::Vector2f(X + (2 - 1.5 / sqrt(2)) * editorFieldSizeX / m, Y + (2.5 - 1.5 / sqrt(2)) * editorFieldSizeY / n));
-		window.draw(temp);
-		temp.rotate(90);
-		temp.setPosition(sf::Vector2f(X + (2 + 1.5 / sqrt(2)) * editorFieldSizeX / m, Y + (2.5 - 1.5 / sqrt(2)) * editorFieldSizeY / n));
-		window.draw(temp);
-	}
+	lamps.push_back(Lamp({ curX,curY }, isRotated));
 }
 
 int curMode = 0;
@@ -560,7 +426,9 @@ void deleteSelection() {
 	if (Y1 > Y2) {
 		std::swap(Y1, Y2);
 	}
-	std::vector<elem> tresistors, tbatteries, tlamps;
+	std::vector<Resistor> tresistors;
+	std::vector<Battery> tbatteries;
+	std::vector<Lamp> tlamps;
 	deleteInnerWires(X1, Y1, X2, Y2);
 	for (int i = 0; i < resistors.size(); i++) {
 		float a = resistors[i].pos.x, b = resistors[i].pos.y;
@@ -1029,13 +897,16 @@ int launchMainWindow()
 			}
 		}
 		for (int i = 0; i < resistors.size(); i++) {
-			drawResistor(resistors[i].pos.x, resistors[i].pos.y, resistors[i].isRotated);
+			//drawResistor(resistors[i].pos.x, resistors[i].pos.y, resistors[i].isRotated);
+			resistors[i].draw(&window);
 		}
 		for (int i = 0; i < batteries.size(); i++) {
-			drawBattery(batteries[i].pos.x, batteries[i].pos.y, batteries[i].isRotated);
+			//drawBattery(batteries[i].pos.x, batteries[i].pos.y, batteries[i].isRotated);
+			batteries[i].draw(&window);
 		}
 		for (int i = 0; i < lamps.size(); i++) {
-			drawLamp(lamps[i].pos.x, lamps[i].pos.y, lamps[i].isRotated);
+			//drawLamp(lamps[i].pos.x, lamps[i].pos.y, lamps[i].isRotated);
+			lamps[i].draw(&window);
 		}
 		if (curMode == 0) {
 			if (isStarted) {
