@@ -24,10 +24,14 @@ extern float lampSizeY;
 extern float inspectorWidth;
 extern float inspectorLeftTextMargin;
 extern float inspectorLineSize;
+extern float vertexRadius;
 extern sf::Font arial;
 extern sf::Color mainColor;
 extern sf::Vector2f sectionSize;
 struct coord {
 	float x, y;
+};
+struct ElementRect {
+	float x1, x2, y1, y2;
 };
 extern sf::Texture *resistorTexture, *batteryTexture, *lampTexture;

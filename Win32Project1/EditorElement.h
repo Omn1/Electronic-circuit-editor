@@ -1,6 +1,7 @@
 #pragma once
 #include "Editor.h"
 #include <SFML/Graphics.hpp>
+#include "ChainVertex.h"
 class EditorElement
 {
 public:
@@ -8,7 +9,13 @@ public:
 	int isRotated;
 	double resistance;
     float sizeX, sizeY;
+	float deltaX, deltaY;
+	ChainVertex * v1, * v2;
+	ElementRect getElementRect();
 	void draw(sf::RenderWindow * window);
+	void rotate();
+	void move(float dX, float dY);
+	void updateRotation();
 	sf::Texture *texture;
 	EditorElement();
 	EditorElement(coord pos, int isRotated);
