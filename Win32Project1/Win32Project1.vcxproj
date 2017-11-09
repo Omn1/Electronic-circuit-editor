@@ -144,17 +144,21 @@
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <PreprocessorDefinitions>NDEBUG;_WINDOWS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <SDLCheck>true</SDLCheck>
+      <AdditionalIncludeDirectories>C:\Program Files\SFML-2.4.2\include</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
+      <AdditionalLibraryDirectories>C:\Program Files\SFML-2.4.2\lib</AdditionalLibraryDirectories>
+      <AdditionalDependencies>sfml-graphics.lib;sfml-window.lib;sfml-system.lib;sfml-main.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="ChainVertex.cpp" />
     <ClCompile Include="EditorElement.cpp" />
+    <ClCompile Include="InspectorInput.cpp" />
     <ClCompile Include="InspectorSection.cpp" />
     <ClCompile Include="ItemInspector.cpp" />
     <ClCompile Include="main.cpp" />
@@ -163,6 +167,7 @@
     <ClInclude Include="ChainVertex.h" />
     <ClInclude Include="Editor.h" />
     <ClInclude Include="EditorElement.h" />
+    <ClInclude Include="InspectorInput.h" />
     <ClInclude Include="InspectorSection.h" />
     <ClInclude Include="ItemInspector.h" />
   </ItemGroup>

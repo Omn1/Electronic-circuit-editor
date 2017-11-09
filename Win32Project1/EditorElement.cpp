@@ -112,6 +112,7 @@ EditorElement::EditorElement()
 	: pos({ 0,0 })
 	, isRotated(0)
 	, resistance(1)
+	, realVoltage(0)
 	, deltaX(0)
 	, deltaY(0)
 	, v1(0)
@@ -124,6 +125,7 @@ EditorElement::EditorElement(coord posT, int isRotatedT)
 	: pos(posT)
 	, isRotated(isRotatedT)
 	, resistance(1)
+	, realVoltage(0)
 	, deltaX(0)
 	, deltaY(0)
 	, v1(0)
@@ -160,8 +162,9 @@ std::vector<std::pair<std::string,std::string>> Resistor::getInspectorElements()
 {
 	std::vector<std::pair<std::string, std::string>> temp;
 	temp.push_back(make_pair(std::string("Item type:"), std::string("Resistor")));
-	temp.push_back(make_pair("Voltage:", std::to_string(getVoltage())));
-	temp.push_back(make_pair("Current:", std::to_string(getVoltage() / resistance)));
+	temp.push_back(make_pair("Voltage:", std::to_string(getVoltage()).substr(0, 10)));
+	temp.push_back(make_pair("Current:", std::to_string(getVoltage() / resistance).substr(0, 10)));
+	temp.push_back(make_pair("Resistance:", std::to_string(resistance).substr(0, 10)));
 	return temp;
 }
 
@@ -187,8 +190,9 @@ std::vector<std::pair<std::string, std::string>> Battery::getInspectorElements()
 {
 	std::vector<std::pair<std::string, std::string>> temp;
 	temp.push_back(make_pair(std::string("Item type:"), std::string("Battery")));
-	temp.push_back(make_pair("Voltage:", std::to_string(getVoltage())));
-	temp.push_back(make_pair("Current:", std::to_string(getVoltage() / resistance)));
+	temp.push_back(make_pair("Voltage:", std::to_string(realVoltage).substr(0, 10)));
+	temp.push_back(make_pair("Current:", std::to_string(getVoltage() / resistance).substr(0, 10)));
+	temp.push_back(make_pair("Resistance:", std::to_string(resistance).substr(0, 10)));
 	return temp;
 }
 
@@ -214,7 +218,8 @@ std::vector<std::pair<std::string, std::string>> Lamp::getInspectorElements()
 {
 	std::vector<std::pair<std::string, std::string>> temp;
 	temp.push_back(make_pair(std::string("Item type:"), std::string("Lamp")));
-	temp.push_back(make_pair("Voltage:", std::to_string(getVoltage())));
-	temp.push_back(make_pair("Current:", std::to_string(getVoltage() / resistance)));
+	temp.push_back(make_pair("Voltage:", std::to_string(getVoltage()).substr(0,10)));
+	temp.push_back(make_pair("Current:", std::to_string(getVoltage() / resistance).substr(0, 10)));
+	temp.push_back(make_pair("Resistance:", std::to_string(resistance).substr(0, 10)));
 	return temp;
 }

@@ -10,6 +10,7 @@
 #include "EditorElement.h"
 #include "ChainVertex.h"
 #include "ItemInspector.h"
+#include "InspectorInput.h"
 
 float gridThickness = 2;
 float gridOutlineThickness = 4;
@@ -674,6 +675,35 @@ void drawDynamicBG() {
 	}
 }
 
+void openInputWindow() {
+	if (!isItemSelected)
+		return;
+	InspectorInput * inputWindow = new InspectorInput();
+	if (selectedItemType == 0) {
+		inputWindow->fieldNames = { "Resistance:" };
+		inputWindow->fields = { "1" };
+	}
+	else if (selectedItemType == 1) {
+		inputWindow->fieldNames = { "Resistance:", "Voltage:" };
+		inputWindow->fields = { "1", "1" };
+	}
+	else if (selectedItemType == 2) {
+		inputWindow->fieldNames = { "Resistance:" };
+		inputWindow->fields = { "1" };
+	}
+	inputWindow->draw();
+	if (selectedItemType == 0) {
+		resistors[selectedItemI]->resistance = atoi(inputWindow->fields[0].c_str());
+	}
+	else if (selectedItemType == 1) {
+		batteries[selectedItemI]->resistance = atoi(inputWindow->fields[0].c_str());
+		batteries[selectedItemI]->realVoltage = atoi(inputWindow->fields[1].c_str());
+	}
+	else if (selectedItemType == 2) {
+		lamps[selectedItemI]->resistance = atoi(inputWindow->fields[0].c_str());
+	}
+}
+
 int launchMainWindow()
 {
 	//AllocConsole();
@@ -683,24 +713,28 @@ int launchMainWindow()
 
 	sf::Sprite wireItem;
 	wireItem.setTexture(itemTexture);
-	wireItem.setTextureRect(sf::IntRect(0, 20, 70, 20));
-	wireItem.setPosition(sf::Vector2f(itemLeftMargin - separatorThickness, topMargin + itemTopMargin));
+	wireItem.setTextureRect(sf::IntRect(180, 0, 90, 90));
+	wireItem.setPosition(sf::Vector2f(-separatorThickness, topMargin));
 
 	sf::Sprite resistorItem;
 	resistorItem.setTexture(itemTexture);
-	resistorItem.setTextureRect(sf::IntRect(0, 0, 70, 20));
-	resistorItem.setPosition(sf::Vector2f(itemLeftMargin - separatorThickness, topMargin + itemTopMargin + itemIconSize + separatorThickness));
+	resistorItem.setTextureRect(sf::IntRect(0, 0, 90, 90));
+	resistorItem.setPosition(sf::Vector2f(-separatorThickness, topMargin + itemIconSize + separatorThickness));
 
 	sf::Sprite batteryItem;
 	batteryItem.setTexture(itemTexture);
-	batteryItem.setTextureRect(sf::IntRect(0, 40, 70, 20));
-	batteryItem.setPosition(sf::Vector2f(itemLeftMargin - separatorThickness, topMargin + itemTopMargin + 2 * (itemIconSize + separatorThickness)));
+	batteryItem.setTextureRect(sf::IntRect(90, 0, 90, 90));
+	batteryItem.setPosition(sf::Vector2f(-separatorThickness, topMargin + 2 * (itemIconSize + separatorThickness)));
 
 	sf::Sprite lampItem;
 	lampItem.setTexture(itemTexture);
-	lampItem.setTextureRect(sf::IntRect(0, 60, 70, 20));
-	lampItem.setPosition(sf::Vector2f(itemLeftMargin - separatorThickness, topMargin + itemTopMargin + 3 * (itemIconSize + separatorThickness)));
+	lampItem.setTextureRect(sf::IntRect(270, 0, 90, 90));
+	lampItem.setPosition(sf::Vector2f(-separatorThickness, topMargin + 3 * (itemIconSize + separatorThickness)));
 
+	sf::Sprite vertexItem;
+	vertexItem.setTexture(itemTexture);
+	vertexItem.setTextureRect(sf::IntRect(360, 0, 90, 90));
+	vertexItem.setPosition(sf::Vector2f(-separatorThickness, topMargin + 4 * (itemIconSize + separatorThickness)));
 
 	sf::RectangleShape wireIconBG(sf::Vector2f(leftMargin, itemIconSize));
 	wireIconBG.setFillColor(sf::Color::White);
@@ -726,6 +760,11 @@ int launchMainWindow()
 	lampIconBG.setOutlineThickness(separatorThickness);
 	lampIconBG.setPosition(sf::Vector2f(0, topMargin + 4 * separatorThickness + 3 * itemIconSize));
 
+	sf::RectangleShape vertexIconBG(sf::Vector2f(leftMargin, itemIconSize));
+	vertexIconBG.setFillColor(sf::Color::White);
+	vertexIconBG.setOutlineColor(mainColor);
+	vertexIconBG.setOutlineThickness(separatorThickness);
+	vertexIconBG.setPosition(sf::Vector2f(0, topMargin + 5 * separatorThickness + 4 * itemIconSize));
 
 	sf::RectangleShape selectedItemBG(sf::Vector2f(itemIconSize + 2 * separatorThickness, itemIconSize + 2 * separatorThickness));
 	selectedItemBG.setFillColor(sf::Color::Transparent);
@@ -748,19 +787,19 @@ int launchMainWindow()
 	rotateButtonBG.setFillColor(sf::Color::White);
 	rotateButtonBG.setOutlineColor(mainColor);
 	rotateButtonBG.setOutlineThickness(separatorThickness);
-	rotateButtonBG.setPosition(sf::Vector2f(3 * topMargin + 3 * separatorThickness, 0));
-
-	sf::RectangleShape moveButtonBG(sf::Vector2f(topMargin, topMargin));
-	moveButtonBG.setFillColor(sf::Color::White);
-	moveButtonBG.setOutlineColor(mainColor);
-	moveButtonBG.setOutlineThickness(separatorThickness);
-	moveButtonBG.setPosition(sf::Vector2f(2 * topMargin + 2 * separatorThickness, 0));
+	rotateButtonBG.setPosition(sf::Vector2f(2 * topMargin + 2 * separatorThickness, 0));
 
 	sf::RectangleShape deleteButtonBG(sf::Vector2f(topMargin, topMargin));
 	deleteButtonBG.setFillColor(sf::Color::White);
 	deleteButtonBG.setOutlineColor(mainColor);
 	deleteButtonBG.setOutlineThickness(separatorThickness);
-	deleteButtonBG.setPosition(sf::Vector2f(4 * topMargin + 4 * separatorThickness, 0));
+	deleteButtonBG.setPosition(sf::Vector2f(3 * topMargin + 3 * separatorThickness, 0));
+
+	sf::RectangleShape editButtonBG(sf::Vector2f(topMargin, topMargin));
+	editButtonBG.setFillColor(sf::Color::White);
+	editButtonBG.setOutlineColor(mainColor);
+	editButtonBG.setOutlineThickness(separatorThickness);
+	editButtonBG.setPosition(sf::Vector2f(4 * topMargin + 4 * separatorThickness, 0));
 
 	sf::Sprite drawButton;
 	drawButton.setTexture(toolbarTexture);
@@ -775,17 +814,17 @@ int launchMainWindow()
 	sf::Sprite rotateButton;
 	rotateButton.setTexture(toolbarTexture);
 	rotateButton.setTextureRect(sf::IntRect(60, 0, 30, 30));
-	rotateButton.setPosition(sf::Vector2f(3 * topMargin + separatorThickness, -2 * separatorThickness));
-
-	sf::Sprite moveButton;
-	moveButton.setTexture(toolbarTexture);
-	moveButton.setTextureRect(sf::IntRect(120, 0, 30, 30));
-	moveButton.setPosition(sf::Vector2f(2 * topMargin, -2 * separatorThickness));
+	rotateButton.setPosition(sf::Vector2f(2 * topMargin, -2 * separatorThickness));
 
 	sf::Sprite deleteButton;
 	deleteButton.setTexture(toolbarTexture);
 	deleteButton.setTextureRect(sf::IntRect(90, 0, 30, 30));
-	deleteButton.setPosition(sf::Vector2f(4 * topMargin + 2 * separatorThickness, -2 * separatorThickness));
+	deleteButton.setPosition(sf::Vector2f(3 * topMargin + 1 * separatorThickness, -2 * separatorThickness));
+	
+	sf::Sprite editButton;
+	editButton.setTexture(toolbarTexture);
+	editButton.setTextureRect(sf::IntRect(120, 0, 30, 30));
+	editButton.setPosition(sf::Vector2f(4 * topMargin + 2 * separatorThickness, -2 * separatorThickness));
 
 	sf::RectangleShape selectedModeBG(sf::Vector2f(topMargin + 2 * separatorThickness, topMargin + 2 * separatorThickness));
 	selectedModeBG.setFillColor(sf::Color::Transparent);
@@ -840,19 +879,18 @@ int launchMainWindow()
 								startSelecting();
 							}
 							else {
-								curMode = 2;
 								isStarted = 0;
 								startMoving();
 							}
 						}
-						else if (curMode == 2) {
-							startMoving();
-						}
 					}
 					else if (event.mouseButton.y >= topMargin && event.mouseButton.x < leftMargin) {
-						currentItem = int(event.mouseButton.y - topMargin) / int(itemIconSize + separatorThickness);
-						isRotated = 0;
-						curMode = 0;
+						int tCurItem = int(event.mouseButton.y - topMargin) / int(itemIconSize + separatorThickness);
+						if (tCurItem < 5) {
+							currentItem = tCurItem;
+							isRotated = 0;
+							curMode = 0;
+						}
 					}
 					else if (event.mouseButton.y < topMargin) {
 						int curButton = floor(event.mouseButton.x / (topMargin + separatorThickness));
@@ -869,10 +907,6 @@ int launchMainWindow()
 							isItemSelected = 0;
 						}
 						else if (curButton == 2) {
-							curMode = 2;
-							isStarted = 0;
-						}
-						else if (curButton == 3) {
 							if (isItemSelected) {
 								rotateItem();
 							}
@@ -881,10 +915,13 @@ int launchMainWindow()
 								isRotated %= 4;
 							}
 						}
-						else if (curButton == 4) {
+						else if (curButton == 3) {
 							deleteSelection();
 							isSelected = 0;
 							isItemSelected = 0;
+						}
+						else if (curButton == 4) {
+							openInputWindow();
 						}
 					}
 				}
@@ -898,7 +935,7 @@ int launchMainWindow()
 						else if (curMode == 1 && isStarted) {
 							finishSelecting();
 						}
-						else if (curMode == 2 && isMoving) {
+						else if (curMode == 1 && isMoving) {
 							finishMoving();
 						}
 					}
@@ -912,11 +949,12 @@ int launchMainWindow()
 		window.draw(resistorIconBG);
 		window.draw(batteryIconBG);
 		window.draw(lampIconBG);
+		window.draw(vertexIconBG);
 		window.draw(drawButtonBG);
 		window.draw(selectButtonBG);
 		window.draw(rotateButtonBG);
-		window.draw(moveButtonBG);
 		window.draw(deleteButtonBG);
+		window.draw(editButtonBG);
 		sf::RectangleShape temp;
 		temp.setFillColor(sf::Color::Black);
 		temp.setOutlineThickness(gridOutlineThickness);
@@ -983,23 +1021,18 @@ int launchMainWindow()
 			if (isSelected) {
 				drawSelection();
 			}
-		}
-		else if (curMode == 2) {
-			if (isSelected) {
-				drawSelection();
-			}
 			if (isMoving && checkMoveInField()) {
 				drawMovePreview();
 			}
 			else {
 				isMoving = 0;
-				curMode = 1;
 			}
 		}
 		window.draw(wireItem);
 		window.draw(resistorItem);
 		window.draw(batteryItem);
 		window.draw(lampItem);
+		window.draw(vertexItem);
 		selectedItemBG.setPosition(sf::Vector2f(-separatorThickness, topMargin + currentItem*(itemIconSize + separatorThickness)));
 		window.draw(selectedItemBG);
 		selectedModeBG.setPosition(sf::Vector2f(-separatorThickness + curMode*(topMargin + separatorThickness), -separatorThickness));
@@ -1007,8 +1040,8 @@ int launchMainWindow()
 		window.draw(drawButton);
 		window.draw(selectButton);
 		window.draw(rotateButton);
-		window.draw(moveButton);
 		window.draw(deleteButton);
+		window.draw(editButton);
 		drawItemInspector();
 		window.display();
 	}
