@@ -9,6 +9,7 @@
 #include "Editor.h"
 #include "EditorElement.h"
 #include "ChainVertex.h"
+#include "ItemInspector.h"
 
 float gridThickness = 2;
 float gridOutlineThickness = 4;
@@ -466,11 +467,14 @@ void deleteSelection() {
 	std::vector<Battery> tbatteries;
 	std::vector<Lamp> tlamps;
 	std::vector<ChainVertex*> tvertexes;
+	std::vector<int> isVertexSelected(vertexes.size(),1);
 	deleteInnerWires(X1, Y1, X2, Y2);
 	ElementRect temp = { X1,X2,Y1,Y2 };
 	for (int i = 0; i < resistors.size(); i++) {
 		if (!(checkStrictCollision(temp,resistors[i].getElementRect()))) {
 			tresistors.push_back(resistors[i]);
+		}
+		else {
 			tvertexes.push_back(resistors[i].v1);
 			tvertexes.push_back(resistors[i].v2);
 		}
@@ -478,6 +482,8 @@ void deleteSelection() {
 	for (int i = 0; i < batteries.size(); i++) {
 		if (!(checkStrictCollision(temp, batteries[i].getElementRect()))) {
 			tbatteries.push_back(batteries[i]);
+		}
+		else {
 			tvertexes.push_back(batteries[i].v1);
 			tvertexes.push_back(batteries[i].v2);
 		}
@@ -485,8 +491,22 @@ void deleteSelection() {
 	for (int i = 0; i < lamps.size(); i++) {
 		if (!(checkStrictCollision(temp, lamps[i].getElementRect()))) {
 			tlamps.push_back(lamps[i]);
+		}
+		else {
 			tvertexes.push_back(lamps[i].v1);
 			tvertexes.push_back(lamps[i].v2);
+		}
+	}
+	std::sort(tvertexes.begin(), tvertexes.end());
+	for (int i = 0; i < vertexes.size(); i++) {
+		if (checkStrictCollision(temp, { vertexes[i]->pos.x,vertexes[i]->pos.x,vertexes[i]->pos.y,vertexes[i]->pos.y }) || (std::binary_search(tvertexes.begin(), tvertexes.end(), vertexes[i]))) {
+			isVertexSelected[i] = 0;
+		}
+	}
+	tvertexes.clear(); 
+	for (int i = 0; i < vertexes.size(); i++) {
+		if (isVertexSelected[i]) {
+			tvertexes.push_back(vertexes[i]);
 		}
 	}
 	resistors = tresistors;
@@ -515,6 +535,12 @@ void moveSelection(float deltaX, float deltaY) {
 		std::swap(Y1, Y2);
 	}
 	ElementRect temp = { X1,X2,Y1,Y2 };
+	for (int i = 0; i < vertexes.size(); i++) {
+		if (checkStrictCollision(temp, { vertexes[i]->pos.x,vertexes[i]->pos.x,vertexes[i]->pos.y,vertexes[i]->pos.y })) {
+			vertexes[i]->pos.x += deltaX;
+			vertexes[i]->pos.y += deltaY;
+		}
+	}
 	for (int i = 0; i < wires.size(); i++) {
 		float a = wires[i].pos.x, b = wires[i].pos.y;
 		float c = a + (1 - wires[i].isRotated),
@@ -590,41 +616,24 @@ void rotateItem() {
 	}
 }
 
+ItemInspector inspector;
+
 void drawItemInspector() {
-	sf::RectangleShape inspectorBG(sf::Vector2f(inspectorWidth, topMargin + editorFieldSizeY));
-	inspectorBG.setFillColor(sf::Color::White);
-	inspectorBG.setOutlineColor(mainColor);
-	inspectorBG.setOutlineThickness(separatorThickness);
-	inspectorBG.setPosition(sf::Vector2f(leftMargin + editorFieldSizeX, 0));
-	window.draw(inspectorBG);
-	sf::RectangleShape nameTextBG(sf::Vector2f(inspectorWidth, inspectorLineSize));
-	nameTextBG.setFillColor(sf::Color::White);
-	nameTextBG.setOutlineColor(mainColor);
-	nameTextBG.setOutlineThickness(separatorThickness);
-	nameTextBG.setPosition(leftMargin + editorFieldSizeX, 0);
-	window.draw(nameTextBG);
-	sf::Text inspectorNameText("Properties:", arial);
-	inspectorNameText.setPosition(sf::Vector2f(leftMargin + editorFieldSizeX - separatorThickness + inspectorLeftTextMargin, -separatorThickness));
-	inspectorNameText.setFillColor(sf::Color::Black);
-	window.draw(inspectorNameText);
-	std::string itemType = "";
 	if (isItemSelected) {
 		if (selectedItemType == 0) {
-			itemType = "Resistor";
+			inspector.sections = resistors[selectedItemI].getInspectorElements();
 		}
 		else if (selectedItemType == 1) {
-			itemType = "Battery";
+			inspector.sections = batteries[selectedItemI].getInspectorElements();
 		}
 		else if (selectedItemType == 2) {
-			itemType = "Lamp";
+			inspector.sections = lamps[selectedItemI].getInspectorElements();
 		}
 	}
-	InspectorSection elementType("Item type:", itemType, sf::Vector2f(leftMargin + editorFieldSizeX, inspectorLineSize + separatorThickness), sectionSize);
-	elementType.draw(&window);
-	InspectorSection elementVoltage("Voltage (V):", "", sf::Vector2f(leftMargin + editorFieldSizeX, 3 * (inspectorLineSize + separatorThickness)), sectionSize);
-	elementVoltage.draw(&window);
-	InspectorSection elementCurrent("Current (A):", "", sf::Vector2f(leftMargin + editorFieldSizeX, 5 * (inspectorLineSize + separatorThickness)), sectionSize);
-	elementCurrent.draw(&window);
+	else {
+		inspector.sections = std::vector<std::pair<std::string, std::string> >();
+	}
+	inspector.draw(&window);
 }
 
 void resetFieldSize() {
@@ -1033,7 +1042,6 @@ void launchStartingWindow() {
 		startWindow.display();
 	}
 }
-
 int main() {
 	bool isError = 0;
 	if (!toolbarTexture.loadFromFile("toolbar-sprite.png")) {

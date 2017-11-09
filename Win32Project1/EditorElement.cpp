@@ -1,6 +1,14 @@
 #include "EditorElement.h"
 #include "Editor.h"
+#include <string>
 
+double EditorElement::getVoltage()
+{
+	if (v1 && v2) {
+		return abs(v1->potential - v2->potential);
+	}
+	return 0.0;
+}
 
 ElementRect EditorElement::getElementRect()
 {
@@ -40,14 +48,7 @@ void EditorElement::move(float dX, float dY)
 {
 	pos.x += dX;
 	pos.y += dY;
-	if (v1) {
-		v1->pos.x += dX;
-		v1->pos.y += dY;
-	}
-	if (v2) {
-		v2->pos.x += dX;
-		v2->pos.y += dY;
-	}
+	updateRotation();
 }
 
 void EditorElement::updateRotation()
@@ -102,10 +103,15 @@ void EditorElement::updateRotation()
 	}
 }
 
+std::vector<std::pair<std::string, std::string>> EditorElement::getInspectorElements()
+{
+	return std::vector<std::pair<std::string, std::string>>();
+}
+
 EditorElement::EditorElement()
 	: pos({ 0,0 })
 	, isRotated(0)
-	, resistance(0)
+	, resistance(1)
 	, deltaX(0)
 	, deltaY(0)
 	, v1(0)
@@ -117,7 +123,7 @@ EditorElement::EditorElement()
 EditorElement::EditorElement(coord posT, int isRotatedT)
 	: pos(posT)
 	, isRotated(isRotatedT)
-	, resistance(0)
+	, resistance(1)
 	, deltaX(0)
 	, deltaY(0)
 	, v1(0)
@@ -150,6 +156,14 @@ Resistor::Resistor(coord posT, int isRotatedT)
 	updateRotation();
 }
 
+std::vector<std::pair<std::string,std::string>> Resistor::getInspectorElements() 
+{
+	std::vector<std::pair<std::string, std::string>> temp;
+	temp.push_back(make_pair(std::string("Item type:"), std::string("Resistor")));
+	temp.push_back(make_pair("Voltage:", std::to_string(getVoltage())));
+	temp.push_back(make_pair("Current:", std::to_string(getVoltage() / resistance)));
+	return temp;
+}
 
 Battery::Battery()
 	: EditorElement()
@@ -169,6 +183,15 @@ Battery::Battery(coord posT, int isRotatedT)
 	updateRotation();
 }
 
+std::vector<std::pair<std::string, std::string>> Battery::getInspectorElements()
+{
+	std::vector<std::pair<std::string, std::string>> temp;
+	temp.push_back(make_pair(std::string("Item type:"), std::string("Battery")));
+	temp.push_back(make_pair("Voltage:", std::to_string(getVoltage())));
+	temp.push_back(make_pair("Current:", std::to_string(getVoltage() / resistance)));
+	return temp;
+}
+
 Lamp::Lamp()
 	: EditorElement()
 {
@@ -185,4 +208,13 @@ Lamp::Lamp(coord posT, int isRotatedT)
 	sizeY = lampSizeY;
 	texture = lampTexture;
 	updateRotation();
+}
+
+std::vector<std::pair<std::string, std::string>> Lamp::getInspectorElements()
+{
+	std::vector<std::pair<std::string, std::string>> temp;
+	temp.push_back(make_pair(std::string("Item type:"), std::string("Lamp")));
+	temp.push_back(make_pair("Voltage:", std::to_string(getVoltage())));
+	temp.push_back(make_pair("Current:", std::to_string(getVoltage() / resistance)));
+	return temp;
 }
