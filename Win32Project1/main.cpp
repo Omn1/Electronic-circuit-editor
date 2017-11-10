@@ -241,7 +241,7 @@ void deleteInnerWires(int X1, int Y1, int X2, int Y2) {
 		float a = wires[i]->pos.x, b = wires[i]->pos.y;
 		float c = a + (1 - wires[i]->isRotated),
 			d = b + wires[i]->isRotated;
-		if (!(X2 > a && c > X1 && Y2 > b && d > Y1)) {
+		if (!(a >= X1 && c <= X2 && b >= Y1 && d <= Y2)) {
 			twires.push_back(wires[i]);
 		}
 	}
@@ -387,7 +387,7 @@ void setSelection(ElementRect newSel) {
 
 void selectItem() {
 	float curX, curY;
-	getCurrentFlooredFieldCoords(curX, curY);
+	getCurrentFieldCoords(curX, curY);
 	isItemSelected = 0;
 	isSelected = 0;
 	ElementRect temp = { curX, curX, curY, curY };
@@ -430,8 +430,22 @@ void finishSelecting() {
 	else {
 		isItemSelected = 0;
 	}
+	if (selectionEndX < startX) {
+		std::swap(selectionEndX, startX);
+	}
+	if (selectionEndY < startY) {
+		std::swap(selectionEndY, startY);
+	}
 	isSelected = 1;
 	isStarted = 0;
+}
+
+void drawItemSelectionHighlight(EditorElement * element) {
+	ElementRect trect = element->getElementRect();
+	sf::RectangleShape temp(sf::Vector2f((trect.x2 - trect.x1)*cellSize, (trect.y2 - trect.y1)*cellSize));
+	temp.setFillColor(sf::Color(0, 0, 255, 120));
+	temp.setPosition(leftMargin + trect.x1*cellSize, topMargin + trect.y1*cellSize);
+	window.draw(temp);
 }
 
 void drawSelection() {
@@ -442,6 +456,33 @@ void drawSelection() {
 	else {
 		endX = selectionEndX;
 		endY = selectionEndY;
+	}
+	float X1 = startX, X2 = endX, Y1 = startY, Y2 = endY;
+	if (X1 > X2) {
+		std::swap(X1, X2);
+	}
+	if (Y1 > Y2) {
+		std::swap(Y1, Y2);
+	}
+	ElementRect temp = { X1, X2, Y1, Y2 };
+	int debugCount = 0;
+	for (int i = 0; i < resistors.size(); i++) {
+		if (checkStrictCollision(temp, resistors[i]->getElementRect())) {
+			drawItemSelectionHighlight(resistors[i]);
+			debugCount++;
+		}
+	}
+	for (int i = 0; i < batteries.size(); i++) {
+		if (checkStrictCollision(temp, batteries[i]->getElementRect())) {
+			drawItemSelectionHighlight(batteries[i]);
+			debugCount++;
+		}
+	}
+	for (int i = 0; i < lamps.size(); i++) {
+		if (checkStrictCollision(temp, lamps[i]->getElementRect())) {
+			drawItemSelectionHighlight(lamps[i]);
+			debugCount++;
+		}
 	}
 	drawDottedRect(startX*cellSize + leftMargin, startY*cellSize + topMargin, endX*cellSize + leftMargin, endY*cellSize + topMargin, sf::Color::Green);
 }
@@ -514,6 +555,8 @@ void deleteSelection() {
 	batteries = tbatteries;
 	lamps = tlamps;
 	vertexes = tvertexes;
+	isSelected = 0;
+	isItemSelected = 0;
 }
 
 float moveStartX = 0, moveStartY = 0, moveEndX = 0, moveEndY = 0;
@@ -681,26 +724,36 @@ void openInputWindow() {
 	InspectorInput * inputWindow = new InspectorInput();
 	if (selectedItemType == 0) {
 		inputWindow->fieldNames = { "Resistance:" };
-		inputWindow->fields = { "1" };
+		inputWindow->fields = { std::to_string(resistors[selectedItemI]->resistance).substr(0,8) };
 	}
 	else if (selectedItemType == 1) {
 		inputWindow->fieldNames = { "Resistance:", "Voltage:" };
-		inputWindow->fields = { "1", "1" };
+		inputWindow->fields = { std::to_string(batteries[selectedItemI]->resistance).substr(0,8), std::to_string(batteries[selectedItemI]->realVoltage).substr(0,8) };
 	}
 	else if (selectedItemType == 2) {
 		inputWindow->fieldNames = { "Resistance:" };
-		inputWindow->fields = { "1" };
+		inputWindow->fields = { std::to_string(lamps[selectedItemI]->resistance).substr(0,8) };
 	}
 	inputWindow->draw();
 	if (selectedItemType == 0) {
-		resistors[selectedItemI]->resistance = atoi(inputWindow->fields[0].c_str());
+		resistors[selectedItemI]->resistance = atof(inputWindow->fields[0].c_str());
 	}
 	else if (selectedItemType == 1) {
-		batteries[selectedItemI]->resistance = atoi(inputWindow->fields[0].c_str());
-		batteries[selectedItemI]->realVoltage = atoi(inputWindow->fields[1].c_str());
+		batteries[selectedItemI]->resistance = atof(inputWindow->fields[0].c_str());
+		batteries[selectedItemI]->realVoltage = atof(inputWindow->fields[1].c_str());
 	}
 	else if (selectedItemType == 2) {
-		lamps[selectedItemI]->resistance = atoi(inputWindow->fields[0].c_str());
+		lamps[selectedItemI]->resistance = atof(inputWindow->fields[0].c_str());
+	}
+}
+
+void rotateEvent() {
+	if (isItemSelected) {
+		rotateItem();
+	}
+	else {
+		isRotated++;
+		isRotated %= 4;
 	}
 }
 
@@ -840,6 +893,14 @@ int launchMainWindow()
 		{
 			if (event.type == sf::Event::Closed)
 				window.close();
+			else if (event.type == sf::Event::KeyPressed) {
+				if (event.key.code == sf::Keyboard::Delete) {
+					deleteSelection();
+				}
+				else if (event.key.code == sf::Keyboard::R) {
+					rotateEvent();
+				}
+			}
 			else if (event.type == sf::Event::Resized)
 				window.setView(view = sf::View(sf::FloatRect(0.f, 0.f,
 					static_cast<float>(window.getSize().x),
@@ -907,18 +968,10 @@ int launchMainWindow()
 							isItemSelected = 0;
 						}
 						else if (curButton == 2) {
-							if (isItemSelected) {
-								rotateItem();
-							}
-							else {
-								isRotated++;
-								isRotated %= 4;
-							}
+							rotateEvent();
 						}
 						else if (curButton == 3) {
 							deleteSelection();
-							isSelected = 0;
-							isItemSelected = 0;
 						}
 						else if (curButton == 4) {
 							openInputWindow();

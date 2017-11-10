@@ -53,9 +53,11 @@ void InspectorInput::draw()
 						fields[curField].pop_back();
 					}
 				}
-				else if (isdigit(event.text.unicode)) {
+				else if (isdigit(event.text.unicode) || (event.text.unicode=='.' && fields[curField].find('.')==-1)) {
 					if(fields[curField].size()<8)
 						fields[curField] += static_cast<char>(event.text.unicode);
+					else
+						fields[curField][7] = static_cast<char>(event.text.unicode);
 				}
 			}
 		}
