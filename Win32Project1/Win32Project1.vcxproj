@@ -157,22 +157,26 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="ChainVertex.cpp" />
+    <ClCompile Include="Edge.cpp" />
     <ClCompile Include="EditorElement.cpp" />
     <ClCompile Include="FieldVersion.cpp" />
     <ClCompile Include="InspectorInput.cpp" />
     <ClCompile Include="InspectorSection.cpp" />
     <ClCompile Include="ItemInspector.cpp" />
     <ClCompile Include="main.cpp" />
+    <ClCompile Include="SchemeCalculator.cpp" />
     <ClCompile Include="VersionHandler.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="ChainVertex.h" />
+    <ClInclude Include="Edge.h" />
     <ClInclude Include="Editor.h" />
     <ClInclude Include="EditorElement.h" />
     <ClInclude Include="FieldVersion.h" />
     <ClInclude Include="InspectorInput.h" />
     <ClInclude Include="InspectorSection.h" />
     <ClInclude Include="ItemInspector.h" />
+    <ClInclude Include="SchemeCalculator.h" />
     <ClInclude Include="VersionHandler.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
