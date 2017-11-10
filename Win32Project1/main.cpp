@@ -11,6 +11,7 @@
 #include "ChainVertex.h"
 #include "ItemInspector.h"
 #include "InspectorInput.h"
+#include "FieldVersion.h"
 
 float gridThickness = 2;
 float gridOutlineThickness = 4;
@@ -50,6 +51,23 @@ std::vector<EditorElement*> wires;
 std::vector<ChainVertex*> vertexes;
 sf::Texture toolbarTexture, itemTexture;
 
+FieldVersion getCurrentVersion() {
+	FieldVersion temp;
+	temp.wires = wires;
+	temp.resistors = resistors;
+	temp.lamps = lamps;
+	temp.batteries = batteries;
+	temp.vertexes = vertexes;
+	return temp;
+}
+
+void setVersion(FieldVersion temp) {
+	wires = temp.wires;
+	resistors = temp.resistors;
+	lamps = temp.lamps;
+	batteries = temp.batteries;
+	vertexes = temp.vertexes;
+}
 
 bool checkStrictCollision(ElementRect a, ElementRect b) {
 	return (a.x2 > b.x1 && b.x2 > a.x1 && a.y2 > b.y1 && b.y2 > a.y1);
@@ -248,6 +266,19 @@ void deleteInnerWires(int X1, int Y1, int X2, int Y2) {
 	wires = twires;
 }
 
+void deleteStrictInnerWires(int X1, int Y1, int X2, int Y2) {
+	std::vector<EditorElement*> twires;
+	for (int i = 0; i < wires.size(); i++) {
+		float a = wires[i]->pos.x, b = wires[i]->pos.y;
+		float c = a + (1 - wires[i]->isRotated),
+			d = b + wires[i]->isRotated;
+		if (!(a < X2 && X1 < c && b < Y2 && Y1 < d)) {
+			twires.push_back(wires[i]);
+		}
+	}
+	wires = twires;
+}
+
 int isRotated = 0;
 
 void drawItemPreview(float sizeX, float sizeY) {
@@ -284,10 +315,10 @@ void putResistor() {
 		return;
 	}
 	if (isRotated % 2 == 0) {
-		deleteInnerWires(curX, curY, curX + resistorSizeX, curY + resistorSizeY);
+		deleteStrictInnerWires(curX, curY, curX + resistorSizeX, curY + resistorSizeY);
 	}
 	else {
-		deleteInnerWires(curX, curY, curX + resistorSizeY, curY + resistorSizeX);
+		deleteStrictInnerWires(curX, curY, curX + resistorSizeY, curY + resistorSizeX);
 	}
 	resistors.push_back(new Resistor({ curX, curY }, isRotated));
 	if (isRotated % 2 == 0) {
@@ -315,10 +346,10 @@ void putBattery() {
 		return;
 	}
 	if (isRotated % 2 == 0) {
-		deleteInnerWires(curX, curY, curX + batterySizeX, curY + batterySizeY);
+		deleteStrictInnerWires(curX, curY, curX + batterySizeX, curY + batterySizeY);
 	}
 	else {
-		deleteInnerWires(curX, curY, curX + batterySizeY, curY + batterySizeX);
+		deleteStrictInnerWires(curX, curY, curX + batterySizeY, curY + batterySizeX);
 	}
 	batteries.push_back(new Battery({ curX,curY }, isRotated ));
 	if (isRotated % 2 == 0) {
@@ -346,10 +377,10 @@ void putLamp() {
 		return;
 	}
 	if (isRotated % 2 == 0) {
-		deleteInnerWires(curX, curY, curX + lampSizeX, curY + lampSizeY);
+		deleteStrictInnerWires(curX, curY, curX + lampSizeX, curY + lampSizeY);
 	}
 	else {
-		deleteInnerWires(curX, curY, curX + lampSizeY, curY + lampSizeX);
+		deleteStrictInnerWires(curX, curY, curX + lampSizeY, curY + lampSizeX);
 	}
 	lamps.push_back(new Lamp({ curX,curY }, isRotated));
 	if (isRotated % 2 == 0) {
@@ -1148,6 +1179,9 @@ int main() {
 	if (!lampTexture->loadFromFile("lamp.png")) {
 		isError = 1;
 	}
+	resistorTexture->setSmooth(1);
+	batteryTexture->setSmooth(1);
+	lampTexture->setSmooth(1);
 	if (isError) {
 		return 0;
 	}
