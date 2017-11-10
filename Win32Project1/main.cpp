@@ -12,6 +12,7 @@
 #include "ItemInspector.h"
 #include "InspectorInput.h"
 #include "FieldVersion.h"
+#include "VersionHandler.h"
 
 float gridThickness = 2;
 float gridOutlineThickness = 4;
@@ -51,45 +52,55 @@ std::vector<EditorElement*> wires;
 std::vector<ChainVertex*> vertexes;
 sf::Texture toolbarTexture, itemTexture;
 
-std::pair <int, int> getEdge(EditorElement *element)
+VersionHandler handler;
+
+void getEdge(EditorElement *element, int &i, int &j)
 {
-	int i, j;
-	for (i = 0; i < vertexes.size(); i++)
-		if (vertexes[i] == element->v1) break;
-	for (j = 0; j < vertexes.size(); j++)
-		if (vertexes[j] == element->v2) break;
-	return std::make_pair(i, j);
+	for (i = 0; vertexes[i] != element->v1; i++);
+	for (j = 0; vertexes[j] != element->v2; j++);
 }
 
 void updatePhysics()
 {
-	sf::Time time = timer.getElapsedTime();
 	calc.clear();
+	int from, to;
 
 	for (auto resistor : resistors)
 	{
-		std::pair <int, int> edge = getEdge(resistor);
-		calc.addResistance(edge.first, edge.second, resistor->resistance);
+		getEdge(resistor, from, to);
+		calc.addResistance(from, to, resistor->resistance);
 	}
 
 	for (auto lamp : lamps)
 	{
-		std::pair <int, int> edge = getEdge(lamp);
-		calc.addResistance(edge.first, edge.second, lamp->resistance);
+		getEdge(lamp, from, to);
+		calc.addResistance(from, to, lamp->resistance);
 	}
 
 	for (auto battery : batteries)
 	{
-		std::pair <int, int> edge = getEdge(battery);
-		calc.addDCBattery(edge.first, edge.second, battery->realVoltage);
+		getEdge(battery, from, to);
+		calc.addDCBattery(from, to, battery->realVoltage);
 	}
 
 	for (int i = 0; i < vertexes.size(); i++)
 	{
-		for (int j = 0; j < vertexes.size(); j++) if (vertexes[i]->pos == vertexes[j]->pos) calc.addWire(i, j);
+		for (int j = 0; j < vertexes.size(); j++)
+		{
+			if (vertexes[i]->pos == vertexes[j]->pos) calc.addWire(i, j);
+		}
 	}
 
-	for ()
+	std::vector <std::pair <int, coord> > pseudo_vertexes;
+	pseudo_vertexes.clear();
+
+	// TODO: wires
+
+	calc.recalculate(timer.getElapsedTime().asSeconds());
+
+	std::vector <double> potentials;
+
+	// TODO: set potentials
 }
 
 FieldVersion getCurrentVersion() {
@@ -162,6 +173,7 @@ void addLine(int x, int y, int l, int ishor) {
 			wires.push_back(new EditorElement({ (float)x,(float)i }, 1));
 		}
 	}
+	handler.addVersion(getCurrentVersion());
 }
 
 void connectVertexes(float startX, float startY, float endX, float endY) {
@@ -335,13 +347,17 @@ void drawItemPreview(float sizeX, float sizeY) {
 
 void putChainVertex(float curX = -1, float curY = -1)
 {
+	bool isAddVersion = 0;
 	if (curX == -1 && curY == -1) {
 		getCurrentFieldCoords(curX, curY);
+		isAddVersion = 1;
 	}
 	if (isColliding({ curX, curX, curY, curY })) {
 		return;
 	}
 	vertexes.push_back(new ChainVertex({ curX, curY }));
+	if(isAddVersion)
+		handler.addVersion(getCurrentVersion());
 }
 
 void drawResistorPreview() {
@@ -372,6 +388,7 @@ void putResistor() {
 	}
 	resistors.back()->v1 = vertexes[vertexes.size() - 1];
 	resistors.back()->v2 = vertexes[vertexes.size() - 2];
+	handler.addVersion(getCurrentVersion());
 }
 
 void drawBatteryPreview() {
@@ -403,6 +420,7 @@ void putBattery() {
 	}
 	batteries.back()->v1 = vertexes[vertexes.size() - 1];
 	batteries.back()->v2 = vertexes[vertexes.size() - 2];
+	handler.addVersion(getCurrentVersion());
 }
 
 void drawLampPreview() {
@@ -434,6 +452,7 @@ void putLamp() {
 	}
 	lamps.back()->v1 = vertexes[vertexes.size() - 1];
 	lamps.back()->v2 = vertexes[vertexes.size() - 2];
+	handler.addVersion(getCurrentVersion());
 }
 
 int curMode = 0;
@@ -629,6 +648,7 @@ void deleteSelection() {
 	vertexes = tvertexes;
 	isSelected = 0;
 	isItemSelected = 0;
+	handler.addVersion(getCurrentVersion());
 }
 
 float moveStartX = 0, moveStartY = 0, moveEndX = 0, moveEndY = 0;
@@ -680,6 +700,7 @@ void moveSelection(float deltaX, float deltaY) {
 			lamps[i]->move(deltaX, deltaY);
 		}
 	}
+	handler.addVersion(getCurrentVersion());
 }
 
 bool checkMoveInField() {
@@ -829,6 +850,16 @@ void rotateEvent() {
 	}
 }
 
+void undoEvent() {
+	handler.undo();
+	setVersion(handler.getCurrentVersion());
+}
+
+void redoEvent() {
+	handler.redo();
+	setVersion(handler.getCurrentVersion());
+}
+
 int launchMainWindow()
 {
 	//AllocConsole();
@@ -971,6 +1002,12 @@ int launchMainWindow()
 				}
 				else if (event.key.code == sf::Keyboard::R) {
 					rotateEvent();
+				}
+				else if (event.key.code == sf::Keyboard::Z && event.key.control == 1) {
+					undoEvent();
+				}
+				else if (event.key.code == sf::Keyboard::Y && event.key.control == 1) {
+					redoEvent();
 				}
 			}
 			else if (event.type == sf::Event::Resized)

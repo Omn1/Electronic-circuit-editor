@@ -18,6 +18,7 @@ void VersionHandler::addVersion(FieldVersion version) {
 		versions.pop_back();
 	}
 	versions.push_back(version);
+	curVersion++;
 }
 
 void VersionHandler::undo() {
@@ -30,4 +31,9 @@ void VersionHandler::redo() {
 	if (curVersion < versions.size() - 1) {
 		curVersion++;
 	}
+}
+
+FieldVersion VersionHandler::getCurrentVersion()
+{
+	return versions[curVersion];
 }
