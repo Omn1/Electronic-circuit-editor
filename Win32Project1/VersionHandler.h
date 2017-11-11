@@ -11,5 +11,6 @@ public:
 	void redo();
 	int curVersion;
 	std::vector<FieldVersion> versions;
+	FieldVersion getCurrentVersion();
 };
 

@@ -34,19 +34,4 @@ struct coord {
 struct ElementRect {
 	float x1, x2, y1, y2;
 };
-bool operator == (coord a, coord b)
-{
-	return (a.x == b.x && a.y == b.y);
-}
-bool operator != (coord a, coord b)
-{
-	return !(a == b);
-}
-bool operator < (coord a, coord b)
-{
-	if (a.x != b.x) return a.x < b.x;
-	return a.y < b.y;
-}
 extern sf::Texture *resistorTexture, *batteryTexture, *lampTexture;
-extern sf::Clock timer;
-extern SchemeCalculator calc;

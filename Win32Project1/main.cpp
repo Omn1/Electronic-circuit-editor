@@ -52,8 +52,20 @@ std::vector<Lamp*> lamps;
 std::vector<EditorElement*> wires;
 std::vector<ChainVertex*> vertexes;
 sf::Texture toolbarTexture, itemTexture;
+sf::Clock timer;
+SchemeCalculator calc;
 
 VersionHandler handler;
+
+bool operator == (coord a, coord b)
+{
+	return (a.x == b.x && a.y == b.y);
+}
+
+bool operator != (coord a, coord b)
+{
+	return !(a == b);
+}
 
 void getVertex(coord pos, int &i)
 {
@@ -98,23 +110,10 @@ void updatePhysics()
 	}
 
 	// TODO: wires
-	std::map <coord, int> pseudo_graph;
-	std::map <coord, int> used;
 	for (auto wire : wires)
 	{
-		coord pos = wire->pos;
-		pseudo_graph[pos] += (1 << wire->isRotated);
-		if (wire->isRotated % 2 == 0) pos.x++;
-		else pos.y++;
-		pseudo_graph[pos] += (1 << ((wire->isRotated + 2) % 4));
-	}
-
-	for (auto vert : pseudo_graph)
-	{
-		if (used[vert.first] % 2 == 0)
-		{
-
-		}
+		getEdge(wire, from, to);
+		calc.addWire(from, to);
 	}
 	// wires!!!
 
