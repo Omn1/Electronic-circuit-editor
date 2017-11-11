@@ -1,6 +1,6 @@
 #pragma once
 #include <SFML/Graphics.hpp>
-#define EDITOR_H
+#include "SchemeCalculator.h"
 extern float gridThickness;
 extern float gridOutlineThickness;
 extern float n, m;

@@ -168,13 +168,13 @@ void SchemeCalculator::removeDCBattery(int battery_id)
 
 
 // ac batteries block
-int SchemeCalculator::addACBattery(int i, int j, double emf, double cf, double time)
+int SchemeCalculator::addACBattery(int i, int j, double emf, double cf, double phi)
 {
 	if (i >= n) updateSize(i + 1);
 	if (j >= n) updateSize(j + 1);
 	wires[i][j]++;
 	wires[j][i]++;
-	ACBatteries.push_back(Edge3(i, j, emf, cf, cf / time));
+	ACBatteries.push_back(Edge3(i, j, emf, cf, phi));
 	return ACBatteries.size() - 1;
 }
 
@@ -206,20 +206,25 @@ void SchemeCalculator::recalculate(double time)
 
 	for (auto battery : ACBatteries)
 	{
-		s = battery.getI();
-		t = battery.getJ();
-		wires[s][t]--;
-		wires[t][s]--;
+		int ss = battery.getI();
+		int tt = battery.getJ();
+		wires[ss][tt]--;
+		wires[tt][ss]--;
+		updateGraph();
+		s = order[ss];
+		t = order[tt];
 
 		for (auto inductor : inductors) addEdge(inductor.getI(), inductor.getJ(), comp(0, battery.getL2() * inductor.getLength()));
 		for (auto capacitor : capacitors) addEdge(capacitor.getI(), capacitor.getJ(), double(-1) / (battery.getL2() * capacitor.getLength()));
 		
-		updateGraph();
 		temp = getLocalPotentials();
 		for (int i = 0; i < n; i++) local_p[i] = temp[order[i]];
 
 		for (int i = 0; i < n; i++) local_p[i] *= comp(battery.getL1(), battery.getL3());
-		for (int i = 0; i < n; i++) potentials[i] += abs(local_p[i]) * cos(battery.getL2() * time + arg(local_p[i]));
+		for (int i = 0; i < n; i++)
+		{
+			potentials[i] += abs(local_p[i]) * cos(battery.getL2() * time + arg(local_p[i]));
+		}
 		
 		std::list <double>::iterator it;
 		it = inductorsCurrent.begin();
@@ -241,8 +246,8 @@ void SchemeCalculator::recalculate(double time)
 			it++;
 		}
 
-		wires[s][t]++;
-		wires[t][t]++;
+		wires[ss][tt]++;
+		wires[tt][ss]++;
 	}
 
 	for (auto inductor : inductors)
@@ -252,20 +257,22 @@ void SchemeCalculator::recalculate(double time)
 	}
 	for (auto battery : DCBatteries)
 	{
-		s = battery.getI();
-		t = battery.getJ();
-		wires[s][t]--;
-		wires[t][s]--;
-
+		int ss = battery.getI();
+		int tt = battery.getJ();
+		wires[ss][tt]--;
+		wires[tt][ss]--;
 		updateGraph();
+		s = order[ss];
+		t = order[tt];
+
 		temp = getLocalPotentials();
 		for (int i = 0; i < n; i++) local_p[i] = temp[order[i]];
 
 		for (int i = 0; i < n; i++) local_p[i] *= battery.getLength();
 		for (int i = 0; i < n; i++) potentials[i] += abs(local_p[i]);
 
-		wires[s][t]++;
-		wires[t][t]++;
+		wires[ss][tt]++;
+		wires[tt][ss]++;
 	}
 	for (auto inductor : inductors)
 	{
@@ -284,6 +291,9 @@ void SchemeCalculator::updateGraph()
 		if (order[i] == -1) dfsUpdateGraph(i, o++);
 		for (int j = 0; j < n; j++) graph[i][j] = 0;
 	}
+
+	graph.clear();
+	graph.resize(o, std::vector <comp>(o, 0));
 
 	for (int i = 0; i < n; i++)
 	{
@@ -320,7 +330,7 @@ void SchemeCalculator::clearPhysics()
 	capacitorsCurrent.resize(capacitors.size(), 0);
 
 	inductorsCurrent.clear();
-	inductorsCurrent.resize(inductorsCurrent.size(), 0);
+	inductorsCurrent.resize(inductors.size(), 0);
 }
 
 std::vector <comp> SchemeCalculator::getLocalPotentials()
@@ -378,6 +388,9 @@ std::vector <comp> SchemeCalculator::getLocalPotentials()
 	for (int j = 0; j < min(s, t); j++) p[j] = sys[j][n - 2];
 	for (int j = min(s, t) + 1; j < max(s, t); j++) p[j] = sys[j - 1][n - 2];
 	for (int j = max(s, t) + 1; j < n; j++) p[j] = sys[j - 2][n - 2];
+
+	std::vector <comp> ans(this->n);
+	for (int i = 0; i < this->n; i++) ans[i] = p[order[i]];
 
 	return p;
 }

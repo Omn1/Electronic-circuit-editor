@@ -1,6 +1,7 @@
 #define _CRT_SECURE_NO_WARNINGS
 #include <SFML/Graphics.hpp>
 #include <vector>
+#include <map>
 #include <algorithm>
 #include <iostream>
 #include <cstdio>
@@ -51,11 +52,78 @@ std::vector<Lamp*> lamps;
 std::vector<EditorElement*> wires;
 std::vector<ChainVertex*> vertexes;
 sf::Texture toolbarTexture, itemTexture;
+sf::Clock timer;
+SchemeCalculator calc;
 
 
 sf::RenderWindow window(sf::VideoMode(leftMargin + editorFieldSizeX + inspectorWidth, topMargin + editorFieldSizeY), "Electronic circuit editor");
 sf::View view(window.getDefaultView());
 VersionHandler handler;
+
+bool operator == (coord a, coord b)
+{
+	return (a.x == b.x && a.y == b.y);
+}
+
+bool operator != (coord a, coord b)
+{
+	return !(a == b);
+}
+
+void getVertex(coord pos, int &i)
+{
+	for (i = 0; i < vertexes.size() && vertexes[i]->pos != pos; i++);
+}
+
+void getEdge(EditorElement *element, int &i, int &j)
+{
+	for (i = 0; vertexes[i] != element->v1; i++);
+	for (j = 0; vertexes[j] != element->v2; j++);
+}
+
+void updatePhysics()
+{
+	calc.clear();
+	int from, to;
+
+	for (auto resistor : resistors)
+	{
+		getEdge(resistor, from, to);
+		calc.addResistance(from, to, resistor->resistance);
+	}
+
+	for (auto lamp : lamps)
+	{
+		getEdge(lamp, from, to);
+		calc.addResistance(from, to, lamp->resistance);
+	}
+
+	for (auto battery : batteries)
+	{
+		getEdge(battery, from, to);
+		calc.addDCBattery(from, to, battery->realVoltage);
+	}
+
+	for (int i = 0; i < vertexes.size(); i++)
+	{
+		for (int j = 0; j < vertexes.size(); j++)
+		{
+			if (vertexes[i]->pos == vertexes[j]->pos) calc.addWire(i, j);
+		}
+	}
+
+	// TODO: wires
+	for (auto wire : wires)
+	{
+		getEdge(wire, from, to);
+		calc.addWire(from, to);
+	}
+	// wires!!!
+
+	calc.recalculate(timer.getElapsedTime().asSeconds());
+	std::vector <double> potentials = calc.getPotentials();
+	for (int i = 0; i < vertexes.size(); i++) vertexes[i]->potential = potentials[i];
+}
 
 FieldVersion getCurrentVersion() {
 	FieldVersion temp(vertexes, wires, resistors, batteries, lamps);
