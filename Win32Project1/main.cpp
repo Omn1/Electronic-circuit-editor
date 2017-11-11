@@ -70,6 +70,10 @@ void setVersion(FieldVersion temp) {
 	vertexes = temp.vertexes;
 }
 
+void updateVersion() {
+	handler.addVersion(getCurrentVersion());
+}
+
 bool checkStrictCollision(ElementRect a, ElementRect b) {
 	return (a.x2 > b.x1 && b.x2 > a.x1 && a.y2 > b.y1 && b.y2 > a.y1);
 }
@@ -122,7 +126,6 @@ void addLine(int x, int y, int l, int ishor) {
 			wires.push_back(new EditorElement({ (float)x,(float)i }, 1));
 		}
 	}
-	handler.addVersion(getCurrentVersion());
 }
 
 void getCurrentFieldCoords(float &X, float &Y) {
@@ -146,19 +149,17 @@ void getCurrentFlooredFieldCoords(float &X, float &Y) {
 	Y = curY;
 }
 
-void putChainVertex(float curX = -1, float curY = -1)
+void putChainVertex(float curX, float curY, bool isAddVersion)
 {
-	bool isAddVersion = 0;
 	if (curX == -1 && curY == -1) {
 		getCurrentFieldCoords(curX, curY);
-		isAddVersion = 1;
 	}
 	if (isColliding({ curX, curX, curY, curY })) {
 		return;
 	}
 	vertexes.push_back(new ChainVertex({ curX, curY }));
 	if (isAddVersion)
-		handler.addVersion(getCurrentVersion());
+		updateVersion();
 }
 
 void addWireEnds() {
@@ -198,11 +199,11 @@ void addWireEnds() {
 			}
 		}
 		if (isP1 && wires[i]->v1 == 0) {
-			putChainVertex(a, b);
+			putChainVertex(a, b, 0);
 			wires[i]->v1 = vertexes.back();
 		}
 		if (isP2 && wires[i]->v2 == 0) {
-			putChainVertex(c, d);
+			putChainVertex(c, d, 0);
 			wires[i]->v2 = vertexes.back();
 		}
 	}
@@ -212,6 +213,7 @@ void connectVertexes(float startX, float startY, float endX, float endY) {
 	addLine(startX, startY, endY - startY, 0);
 	addLine(startX, endY, endX - startX, 1);
 	addWireEnds();
+	updateVersion();
 }
 
 float startX = 0, startY = 0;
@@ -377,16 +379,16 @@ void putResistor() {
 	}
 	resistors.push_back(new Resistor({ curX, curY }, isRotated));
 	if (isRotated % 2 == 0) {
-		putChainVertex(curX, curY + resistorSizeY / 2);
-		putChainVertex(curX + resistorSizeX, curY + resistorSizeY / 2);
+		putChainVertex(curX, curY + resistorSizeY / 2, 0);
+		putChainVertex(curX + resistorSizeX, curY + resistorSizeY / 2, 0);
 	}
 	else {
-		putChainVertex(curX + resistorSizeY / 2, curY);
-		putChainVertex(curX + resistorSizeY / 2, curY + resistorSizeX);
+		putChainVertex(curX + resistorSizeY / 2, curY, 0);
+		putChainVertex(curX + resistorSizeY / 2, curY + resistorSizeX, 0);
 	}
 	resistors.back()->v1 = vertexes[vertexes.size() - 1];
 	resistors.back()->v2 = vertexes[vertexes.size() - 2];
-	handler.addVersion(getCurrentVersion());
+	updateVersion();
 }
 
 void drawBatteryPreview() {
@@ -409,16 +411,16 @@ void putBattery() {
 	}
 	batteries.push_back(new Battery({ curX,curY }, isRotated ));
 	if (isRotated % 2 == 0) {
-		putChainVertex(curX, curY + batterySizeY / 2);
-		putChainVertex(curX + batterySizeX, curY + batterySizeY / 2);
+		putChainVertex(curX, curY + batterySizeY / 2, 0);
+		putChainVertex(curX + batterySizeX, curY + batterySizeY / 2, 0);
 	}
 	else {
-		putChainVertex(curX + batterySizeY / 2, curY);
-		putChainVertex(curX + batterySizeY / 2, curY + batterySizeX);
+		putChainVertex(curX + batterySizeY / 2, curY, 0);
+		putChainVertex(curX + batterySizeY / 2, curY + batterySizeX, 0);
 	}
 	batteries.back()->v1 = vertexes[vertexes.size() - 1];
 	batteries.back()->v2 = vertexes[vertexes.size() - 2];
-	handler.addVersion(getCurrentVersion());
+	updateVersion();
 }
 
 void drawLampPreview() {
@@ -441,16 +443,16 @@ void putLamp() {
 	}
 	lamps.push_back(new Lamp({ curX,curY }, isRotated));
 	if (isRotated % 2 == 0) {
-		putChainVertex(curX, curY + lampSizeY / 2);
-		putChainVertex(curX + lampSizeX, curY + lampSizeY / 2);
+		putChainVertex(curX, curY + lampSizeY / 2, 0);
+		putChainVertex(curX + lampSizeX, curY + lampSizeY / 2, 0);
 	}
 	else {
-		putChainVertex(curX + lampSizeY / 2, curY);
-		putChainVertex(curX + lampSizeY / 2, curY + lampSizeX);
+		putChainVertex(curX + lampSizeY / 2, curY, 0);
+		putChainVertex(curX + lampSizeY / 2, curY + lampSizeX, 0);
 	}
 	lamps.back()->v1 = vertexes[vertexes.size() - 1];
 	lamps.back()->v2 = vertexes[vertexes.size() - 2];
-	handler.addVersion(getCurrentVersion());
+	updateVersion();
 }
 
 int curMode = 0;
@@ -646,7 +648,7 @@ void deleteSelection() {
 	deleteInnerWires(X1, Y1, X2, Y2);
 	isSelected = 0;
 	isItemSelected = 0;
-	handler.addVersion(getCurrentVersion());
+	updateVersion();
 }
 
 float moveStartX = 0, moveStartY = 0, moveEndX = 0, moveEndY = 0;
@@ -661,6 +663,8 @@ void startMoving() {
 }
 
 void moveSelection(float deltaX, float deltaY) {
+	if (deltaX == 0 && deltaY == 0)
+		return;
 	float X1 = startX, X2 = selectionEndX, Y1 = startY, Y2 = selectionEndY;
 	if (X1 > X2) {
 		std::swap(X1, X2);
@@ -699,7 +703,7 @@ void moveSelection(float deltaX, float deltaY) {
 		}
 	}
 	addWireEnds();
-	handler.addVersion(getCurrentVersion());
+	updateVersion();
 }
 
 bool checkMoveInField() {
@@ -750,6 +754,7 @@ void rotateItem() {
 		lamps[selectedItemI]->rotate();
 		setSelection(lamps[selectedItemI]->getElementRect());
 	}
+	updateVersion();
 }
 
 ItemInspector inspector;
@@ -1040,7 +1045,7 @@ int launchMainWindow()
 								putLamp();
 							}
 							else if (currentItem == 4) {
-								putChainVertex();
+								putChainVertex(-1,-1,1);
 							}
 						}
 						else if (curMode == 1) {
