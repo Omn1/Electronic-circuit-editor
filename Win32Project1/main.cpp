@@ -1,6 +1,7 @@
 #define _CRT_SECURE_NO_WARNINGS
 #include <SFML/Graphics.hpp>
 #include <vector>
+#include <map>
 #include <algorithm>
 #include <iostream>
 #include <cstdio>
@@ -54,6 +55,11 @@ sf::Texture toolbarTexture, itemTexture;
 
 VersionHandler handler;
 
+void getVertex(coord pos, int &i)
+{
+	for (i = 0; i < vertexes.size() && vertexes[i]->pos != pos; i++);
+}
+
 void getEdge(EditorElement *element, int &i, int &j)
 {
 	for (i = 0; vertexes[i] != element->v1; i++);
@@ -91,16 +97,30 @@ void updatePhysics()
 		}
 	}
 
-	std::vector <std::pair <int, coord> > pseudo_vertexes;
-	pseudo_vertexes.clear();
-
 	// TODO: wires
+	std::map <coord, int> pseudo_graph;
+	std::map <coord, int> used;
+	for (auto wire : wires)
+	{
+		coord pos = wire->pos;
+		pseudo_graph[pos] += (1 << wire->isRotated);
+		if (wire->isRotated % 2 == 0) pos.x++;
+		else pos.y++;
+		pseudo_graph[pos] += (1 << ((wire->isRotated + 2) % 4));
+	}
+
+	for (auto vert : pseudo_graph)
+	{
+		if (used[vert.first] % 2 == 0)
+		{
+
+		}
+	}
+	// wires!!!
 
 	calc.recalculate(timer.getElapsedTime().asSeconds());
-
-	std::vector <double> potentials;
-
-	// TODO: set potentials
+	std::vector <double> potentials = calc.getPotentials();
+	for (int i = 0; i < vertexes.size(); i++) vertexes[i]->potential = potentials[i];
 }
 
 FieldVersion getCurrentVersion() {
