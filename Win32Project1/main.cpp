@@ -52,15 +52,13 @@ std::vector<EditorElement*> wires;
 std::vector<ChainVertex*> vertexes;
 sf::Texture toolbarTexture, itemTexture;
 
+
+sf::RenderWindow window(sf::VideoMode(leftMargin + editorFieldSizeX + inspectorWidth, topMargin + editorFieldSizeY), "Electronic circuit editor");
+sf::View view(window.getDefaultView());
 VersionHandler handler;
 
 FieldVersion getCurrentVersion() {
-	FieldVersion temp;
-	temp.wires = wires;
-	temp.resistors = resistors;
-	temp.lamps = lamps;
-	temp.batteries = batteries;
-	temp.vertexes = vertexes;
+	FieldVersion temp(vertexes, wires, resistors, batteries, lamps);
 	return temp;
 }
 
@@ -127,9 +125,93 @@ void addLine(int x, int y, int l, int ishor) {
 	handler.addVersion(getCurrentVersion());
 }
 
+void getCurrentFieldCoords(float &X, float &Y) {
+	float curX = sf::Mouse::getPosition(window).x;
+	curX -= leftMargin;
+	curX = round(curX * m / editorFieldSizeX);
+	float curY = sf::Mouse::getPosition(window).y;
+	curY -= topMargin;
+	curY = round(curY * n / editorFieldSizeY);
+	X = curX;
+	Y = curY;
+}
+void getCurrentFlooredFieldCoords(float &X, float &Y) {
+	float curX = sf::Mouse::getPosition(window).x;
+	curX -= leftMargin;
+	curX = floor(curX * m / editorFieldSizeX);
+	float curY = sf::Mouse::getPosition(window).y;
+	curY -= topMargin;
+	curY = floor(curY * n / editorFieldSizeY);
+	X = curX;
+	Y = curY;
+}
+
+void putChainVertex(float curX = -1, float curY = -1)
+{
+	bool isAddVersion = 0;
+	if (curX == -1 && curY == -1) {
+		getCurrentFieldCoords(curX, curY);
+		isAddVersion = 1;
+	}
+	if (isColliding({ curX, curX, curY, curY })) {
+		return;
+	}
+	vertexes.push_back(new ChainVertex({ curX, curY }));
+	if (isAddVersion)
+		handler.addVersion(getCurrentVersion());
+}
+
+void addWireEnds() {
+	for (int i = 0; i < wires.size(); i++) {
+		float a = wires[i]->pos.x, b = wires[i]->pos.y;
+		float c = a + (1 - wires[i]->isRotated),
+			d = b + wires[i]->isRotated;
+		bool isP1 = 1, isP2 = 1;
+		for (int j = 0; j < wires.size(); j++) {
+			if (!wires[i]->isRotated) {
+				if (wires[j]->pos.x == a && wires[j]->pos.y == b && wires[j]->isRotated == 1)
+					isP1 = 0;
+				if (wires[j]->pos.x == a - 1 && wires[j]->pos.y == b && wires[j]->isRotated == 0)
+					isP1 = 0;
+				if (wires[j]->pos.x == a && wires[j]->pos.y == b - 1 && wires[j]->isRotated == 1)
+					isP1 = 0;
+				if (wires[j]->pos.x == c && wires[j]->pos.y == d && wires[j]->isRotated == 0)
+					isP2 = 0;
+				if (wires[j]->pos.x == c && wires[j]->pos.y == d && wires[j]->isRotated == 1)
+					isP2 = 0;
+				if (wires[j]->pos.x == c && wires[j]->pos.y == d - 1 && wires[j]->isRotated == 1)
+					isP2 = 0;
+			}
+			else {
+				if (wires[j]->pos.x == a && wires[j]->pos.y == b && wires[j]->isRotated == 0)
+					isP1 = 0;
+				if (wires[j]->pos.x == a - 1 && wires[j]->pos.y == b && wires[j]->isRotated == 0)
+					isP1 = 0;
+				if (wires[j]->pos.x == a && wires[j]->pos.y == b - 1 && wires[j]->isRotated == 1)
+					isP1 = 0;
+				if (wires[j]->pos.x == c && wires[j]->pos.y == d && wires[j]->isRotated == 0)
+					isP2 = 0;
+				if (wires[j]->pos.x == c && wires[j]->pos.y == d && wires[j]->isRotated == 1)
+					isP2 = 0;
+				if (wires[j]->pos.x == c - 1 && wires[j]->pos.y == d && wires[j]->isRotated == 0)
+					isP2 = 0;
+			}
+		}
+		if (isP1 && wires[i]->v1 == 0) {
+			putChainVertex(a, b);
+			wires[i]->v1 = vertexes.back();
+		}
+		if (isP2 && wires[i]->v2 == 0) {
+			putChainVertex(c, d);
+			wires[i]->v2 = vertexes.back();
+		}
+	}
+}
+
 void connectVertexes(float startX, float startY, float endX, float endY) {
 	addLine(startX, startY, endY - startY, 0);
 	addLine(startX, endY, endX - startX, 1);
+	addWireEnds();
 }
 
 float startX = 0, startY = 0;
@@ -155,8 +237,7 @@ void finishConnectingVertexes(float mouseX, float mouseY) {
 	endY = round(endY * n / editorFieldSizeY);
 	connectVertexes(startX, startY, endX, endY);
 }
-sf::RenderWindow window(sf::VideoMode(leftMargin + editorFieldSizeX + inspectorWidth, topMargin + editorFieldSizeY), "Electronic circuit editor");
-sf::View view(window.getDefaultView());
+
 void drawWirePreview() {
 	sf::RectangleShape temp;
 	temp.setOutlineThickness(gridOutlineThickness);
@@ -236,27 +317,6 @@ void drawItemPreview(float X1, float Y1, float X2, float Y2) {
 	drawDottedRect(X1, Y1, X2, Y2, color);
 }
 
-void getCurrentFieldCoords(float &X, float &Y) {
-	float curX = sf::Mouse::getPosition(window).x;
-	curX -= leftMargin;
-	curX = round(curX * m / editorFieldSizeX);
-	float curY = sf::Mouse::getPosition(window).y;
-	curY -= topMargin;
-	curY = round(curY * n / editorFieldSizeY);
-	X = curX;
-	Y = curY;
-}
-void getCurrentFlooredFieldCoords(float &X, float &Y) {
-	float curX = sf::Mouse::getPosition(window).x;
-	curX -= leftMargin;
-	curX = floor(curX * m / editorFieldSizeX);
-	float curY = sf::Mouse::getPosition(window).y;
-	curY -= topMargin;
-	curY = floor(curY * n / editorFieldSizeY);
-	X = curX;
-	Y = curY;
-}
-
 void deleteInnerWires(int X1, int Y1, int X2, int Y2) {
 	std::vector<EditorElement*> twires;
 	for (int i = 0; i < wires.size(); i++) {
@@ -268,6 +328,7 @@ void deleteInnerWires(int X1, int Y1, int X2, int Y2) {
 		}
 	}
 	wires = twires;
+	addWireEnds();
 }
 
 void deleteStrictInnerWires(int X1, int Y1, int X2, int Y2) {
@@ -281,6 +342,7 @@ void deleteStrictInnerWires(int X1, int Y1, int X2, int Y2) {
 		}
 	}
 	wires = twires;
+	addWireEnds();
 }
 
 int isRotated = 0;
@@ -294,21 +356,6 @@ void drawItemPreview(float sizeX, float sizeY) {
 		drawItemPreview(curX, curY, curX + sizeX * cellSize, curY + sizeY * cellSize);
 	else
 		drawItemPreview(curX, curY, curX + sizeY * cellSize, curY + sizeX * cellSize);
-}
-
-void putChainVertex(float curX = -1, float curY = -1)
-{
-	bool isAddVersion = 0;
-	if (curX == -1 && curY == -1) {
-		getCurrentFieldCoords(curX, curY);
-		isAddVersion = 1;
-	}
-	if (isColliding({ curX, curX, curY, curY })) {
-		return;
-	}
-	vertexes.push_back(new ChainVertex({ curX, curY }));
-	if(isAddVersion)
-		handler.addVersion(getCurrentVersion());
 }
 
 void drawResistorPreview() {
@@ -552,7 +599,6 @@ void deleteSelection() {
 	std::vector<Lamp*> tlamps;
 	std::vector<ChainVertex*> tvertexes;
 	std::vector<int> isVertexSelected(vertexes.size(),1);
-	deleteInnerWires(X1, Y1, X2, Y2);
 	ElementRect temp = { X1,X2,Y1,Y2 };
 	for (int i = 0; i < resistors.size(); i++) {
 		if (!(checkStrictCollision(temp,resistors[i]->getElementRect()))) {
@@ -597,6 +643,7 @@ void deleteSelection() {
 	batteries = tbatteries;
 	lamps = tlamps;
 	vertexes = tvertexes;
+	deleteInnerWires(X1, Y1, X2, Y2);
 	isSelected = 0;
 	isItemSelected = 0;
 	handler.addVersion(getCurrentVersion());
@@ -632,7 +679,7 @@ void moveSelection(float deltaX, float deltaY) {
 		float a = wires[i]->pos.x, b = wires[i]->pos.y;
 		float c = a + (1 - wires[i]->isRotated),
 			d = b + wires[i]->isRotated;
-		if (X2 > a && c > X1 && Y2 > b && d > Y1) {
+		if (a >= X1 && c <= X2 && b >= Y1 && d <= Y2) {
 			wires[i]->move(deltaX, deltaY);
 		}
 	}
@@ -651,6 +698,7 @@ void moveSelection(float deltaX, float deltaY) {
 			lamps[i]->move(deltaX, deltaY);
 		}
 	}
+	addWireEnds();
 	handler.addVersion(getCurrentVersion());
 }
 

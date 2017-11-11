@@ -117,6 +117,8 @@ EditorElement::EditorElement()
 	, deltaY(0)
 	, v1(0)
 	, v2(0)
+	, sizeX(1)
+	, sizeY(0)
 {
 	updateRotation();
 }
@@ -130,6 +132,8 @@ EditorElement::EditorElement(coord posT, int isRotatedT)
 	, deltaY(0)
 	, v1(0)
 	, v2(0)
+	, sizeX(1)
+	, sizeY(0)
 {
 	updateRotation();
 }
