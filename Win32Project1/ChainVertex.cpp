@@ -15,6 +15,12 @@ ChainVertex::ChainVertex(coord posT)
 
 }
 
+ChainVertex::ChainVertex(const ChainVertex & other)
+{
+	pos.x = other.pos.x;
+	pos.y = other.pos.y;
+}
+
 void ChainVertex::draw(sf::RenderWindow * window)
 {
 	float X = pos.x, Y = pos.y;

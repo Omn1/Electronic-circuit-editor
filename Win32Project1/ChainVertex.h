@@ -8,6 +8,7 @@ public:
 	double potential;
 	ChainVertex();
 	ChainVertex(coord posT);
+	ChainVertex(const ChainVertex &other);
 	void draw(sf::RenderWindow * window);
 	~ChainVertex();
 };

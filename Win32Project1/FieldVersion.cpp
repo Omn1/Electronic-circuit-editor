@@ -6,8 +6,12 @@ FieldVersion::FieldVersion()
 {
 }
 
-FieldVersion::FieldVersion(std::vector<ChainVertex*> tvertexes, std::vector<EditorElement*> twires, std::vector<Resistor*> tresistors, std::vector<Battery*> tbatteries, std::vector<Lamp*> tlamps)
+FieldVersion::FieldVersion(const std::vector<ChainVertex*> &ttvertexes, const std::vector<EditorElement*> &twires, const std::vector<Resistor*> &tresistors, const std::vector<Battery*> &tbatteries, const std::vector<Lamp*> &tlamps)
 {
+	std::vector<ChainVertex*> tvertexes(ttvertexes.size());
+	for (int i = 0; i < ttvertexes.size(); i++) {
+		tvertexes[i] = ttvertexes[i];
+	}
 	std::sort(tvertexes.begin(), tvertexes.end());
 	for (int i = 0; i < tvertexes.size(); i++) {
 		vertexes.push_back(new ChainVertex(*tvertexes[i]));
@@ -55,6 +59,30 @@ FieldVersion::FieldVersion(std::vector<ChainVertex*> tvertexes, std::vector<Edit
 		if (pos != tvertexes.end() && (*pos == tlamps[i]->v2)) {
 			lamps[i]->v2 = vertexes[pos - tvertexes.begin()];
 		}
+	}
+}
+
+FieldVersion::FieldVersion(const FieldVersion & temp)
+{
+	wires.resize(temp.wires.size());
+	for (int i = 0; i < wires.size(); i++) {
+		wires[i] = temp.wires[i];
+	}
+	resistors.resize(temp.resistors.size());
+	for (int i = 0; i < resistors.size(); i++) {
+		resistors[i] = temp.resistors[i];
+	}
+	batteries.resize(temp.batteries.size());
+	for (int i = 0; i < batteries.size(); i++) {
+		batteries[i] = temp.batteries[i];
+	}
+	lamps.resize(temp.lamps.size());
+	for (int i = 0; i < lamps.size(); i++) {
+		lamps[i] = temp.lamps[i];
+	}
+	vertexes.resize(temp.vertexes.size());
+	for (int i = 0; i < vertexes.size(); i++) {
+		vertexes[i] = temp.vertexes[i];
 	}
 }
 

@@ -17,7 +17,7 @@ void VersionHandler::addVersion(FieldVersion version) {
 	while (versions.size() - 1 != curVersion) {
 		versions.pop_back();
 	}
-	versions.push_back(version);
+	versions.push_back(FieldVersion(version));
 	curVersion++;
 }
 

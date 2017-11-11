@@ -63,15 +63,31 @@ FieldVersion getCurrentVersion() {
 }
 
 void setVersion(FieldVersion temp) {
-	wires = temp.wires;
-	resistors = temp.resistors;
-	lamps = temp.lamps;
-	batteries = temp.batteries;
-	vertexes = temp.vertexes;
+	wires.resize(temp.wires.size());
+	for (int i = 0; i < wires.size(); i++) {
+		wires[i] = temp.wires[i];
+	}
+	resistors.resize(temp.resistors.size());
+	for (int i = 0; i < resistors.size(); i++) {
+		resistors[i] = temp.resistors[i];
+	}
+	batteries.resize(temp.batteries.size());
+	for (int i = 0; i < batteries.size(); i++) {
+		batteries[i] = temp.batteries[i];
+	}
+	lamps.resize(temp.lamps.size());
+	for (int i = 0; i < lamps.size(); i++) {
+		lamps[i] = temp.lamps[i];
+	}
+	vertexes.resize(temp.vertexes.size());
+	for (int i = 0; i < vertexes.size(); i++) {
+		vertexes[i] = temp.vertexes[i];
+	}
 }
 
 void updateVersion() {
 	handler.addVersion(getCurrentVersion());
+	setVersion(getCurrentVersion());
 }
 
 bool checkStrictCollision(ElementRect a, ElementRect b) {
@@ -856,12 +872,14 @@ void rotateEvent() {
 
 void undoEvent() {
 	handler.undo();
-	setVersion(handler.getCurrentVersion());
+	isItemSelected = 0;
+	//setVersion(handler.getCurrentVersion());
 }
 
 void redoEvent() {
 	handler.redo();
-	setVersion(handler.getCurrentVersion());
+	isItemSelected = 0;
+	//setVersion(handler.getCurrentVersion());
 }
 
 int launchMainWindow()
@@ -1125,6 +1143,7 @@ int launchMainWindow()
 		temp.setFillColor(sf::Color::Black);
 		temp.setOutlineThickness(gridOutlineThickness);
 		temp.setOutlineColor(sf::Color::Black);
+		setVersion(handler.getCurrentVersion());
 		for (int i = 0; i < wires.size(); i++) {
 			if (wires[i]->isRotated == 0) {
 				temp.setSize(sf::Vector2f(cellSize, roundf(gridThickness)));
