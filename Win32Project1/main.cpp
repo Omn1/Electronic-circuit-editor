@@ -426,31 +426,15 @@ void addWireEnds() {
 		bool isP1 = 1, isP2 = 1;
 		for (int j = 0; j < wires.size(); j++) {
 			if (!wires[i]->isRotated) {
-				if (wires[j]->pos.x == a && wires[j]->pos.y == b && wires[j]->isRotated == 1)
-					isP1 = 0;
 				if (wires[j]->pos.x == a - 1 && wires[j]->pos.y == b && wires[j]->isRotated == 0)
 					isP1 = 0;
-				if (wires[j]->pos.x == a && wires[j]->pos.y == b - 1 && wires[j]->isRotated == 1)
-					isP1 = 0;
 				if (wires[j]->pos.x == c && wires[j]->pos.y == d && wires[j]->isRotated == 0)
-					isP2 = 0;
-				if (wires[j]->pos.x == c && wires[j]->pos.y == d && wires[j]->isRotated == 1)
-					isP2 = 0;
-				if (wires[j]->pos.x == c && wires[j]->pos.y == d - 1 && wires[j]->isRotated == 1)
 					isP2 = 0;
 			}
 			else {
-				if (wires[j]->pos.x == a && wires[j]->pos.y == b && wires[j]->isRotated == 0)
-					isP1 = 0;
-				if (wires[j]->pos.x == a - 1 && wires[j]->pos.y == b && wires[j]->isRotated == 0)
-					isP1 = 0;
 				if (wires[j]->pos.x == a && wires[j]->pos.y == b - 1 && wires[j]->isRotated == 1)
 					isP1 = 0;
-				if (wires[j]->pos.x == c && wires[j]->pos.y == d && wires[j]->isRotated == 0)
-					isP2 = 0;
 				if (wires[j]->pos.x == c && wires[j]->pos.y == d && wires[j]->isRotated == 1)
-					isP2 = 0;
-				if (wires[j]->pos.x == c - 1 && wires[j]->pos.y == d && wires[j]->isRotated == 0)
 					isP2 = 0;
 			}
 		}
