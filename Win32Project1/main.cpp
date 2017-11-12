@@ -70,6 +70,17 @@ bool operator != (coord a, coord b)
 	return !(a == b);
 }
 
+bool operator < (coord a, coord b)
+{
+	if (a.x != b.x) return a.x < b.x;
+	return a.y < b.y;
+}
+
+bool operator > (coord a, coord b)
+{
+	return (a != b && !(a < b));
+}
+
 void getVertex(coord pos, int &i)
 {
 	for (i = 0; i < vertexes.size() && vertexes[i]->pos != pos; i++);
@@ -113,10 +124,137 @@ void updatePhysics()
 	}
 
 	// TODO: wires
+	std::map <coord, int> pseudo_graph;
+	std::set <coord> pseudo_vertexes;
+
 	for (auto wire : wires)
 	{
-		getEdge(wire, from, to);
-		calc.addWire(from, to);
+		coord pos = wire->pos;
+		pseudo_vertexes.insert(pos);
+
+		if (wire->isRotated % 2 == 0) pos.x++;
+		else pos.y++;
+
+		pseudo_vertexes.insert(pos);
+	}
+	for (auto vertex : pseudo_vertexes) pseudo_graph[vertex] = 0;
+
+	for (auto wire : wires)
+	{
+		coord pos = wire->pos;
+
+		pseudo_graph[pos] += 1 << (wire->isRotated);
+		if (wire->isRotated % 2 == 0) pos.x++;
+		else pos.y++;
+
+		pseudo_graph[pos] += 1 << ((wire->isRotated + 2) % 4);
+	}
+
+	for (auto vert : pseudo_vertexes)
+	{
+		coord pos1, pos2;
+		int i, j;
+	
+		if (pseudo_graph[vert] % 2 > 0 || pseudo_graph[vert] % 8 > 3)
+		{
+			pos1 = pos2 = vert;
+			getVertex(pos1, i);
+
+			if (i != vertexes.size())
+			{
+				if (pseudo_graph[vert] % 2 > 0)
+				{
+					do
+					{
+						pseudo_graph[pos1]--;
+						pos1.x++;
+						pseudo_graph[pos1] -= 4;
+						getVertex(pos1, j);
+					} while (j == vertexes.size());
+				}
+				else
+				{
+					do
+					{
+						pseudo_graph[pos1] -= 4;
+						pos1.x--;
+						pseudo_graph[pos1]--;
+						getVertex(pos1, j);
+					} while (j == vertexes.size());
+				}
+			}
+			else
+			{
+				do
+				{
+					pseudo_graph[pos1]--;
+					pos1.x++;
+					pseudo_graph[pos1] -= 4;
+					getVertex(pos1, j);
+				} while (j == vertexes.size());
+				do
+				{
+					pseudo_graph[pos2] -= 4;
+					pos2.x--;
+					pseudo_graph[pos2]--;
+					getVertex(pos2, j);
+				} while (j == vertexes.size());
+			}
+
+			getVertex(pos1, i);
+			getVertex(pos2, j);
+			calc.addWire(i, j);
+		}
+
+		if (pseudo_graph[vert] % 4 > 1 || pseudo_graph[vert] % 16 > 7)
+		{
+			pos1 = pos2 = vert;
+			getVertex(pos1, i);
+
+			if (i != vertexes.size())
+			{
+				if (pseudo_graph[vert] % 4 > 1)
+				{
+					do
+					{
+						pseudo_graph[pos1] -= 2;
+						pos1.y++;
+						pseudo_graph[pos1] -= 8;
+						getVertex(pos1, j);
+					} while (j == vertexes.size());
+				}
+				else
+				{
+					do
+					{
+						pseudo_graph[pos1] -= 8;
+						pos1.y--;
+						pseudo_graph[pos1] -= 2;
+						getVertex(pos1, j);
+					} while (j == vertexes.size());
+				}
+			}
+			else
+			{
+				do
+				{
+					pseudo_graph[pos1] -= 2;
+					pos1.y++;
+					pseudo_graph[pos1] -= 8;
+					getVertex(pos1, j);
+				} while (j == vertexes.size());
+				do
+				{
+					pseudo_graph[pos2] -= 8;
+					pos2.y--;
+					pseudo_graph[pos2] -= 2;
+					getVertex(pos2, j);
+				} while (j == vertexes.size());
+			}
+			getVertex(pos1, i);
+			getVertex(pos2, j);
+			calc.addWire(i, j);
+		}
 	}
 	// wires!!!
 
@@ -879,6 +1017,7 @@ ItemInspector inspector;
 
 void drawItemInspector() {
 	if (isItemSelected) {
+		updatePhysics();
 		if (selectedItemType == 0) {
 			inspector.sections = resistors[selectedItemI]->getInspectorElements();
 		}

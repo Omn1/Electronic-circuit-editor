@@ -363,7 +363,13 @@ std::vector <comp> SchemeCalculator::getLocalPotentials()
 	for (int i = 0; i < n - 2; i++)
 	{
 		int j = i;
-		while (sys[j][i] == comp(0)) j++;
+		while (j < n - 2 && sys[j][i] == comp(0)) j++;
+		if (j == n - 2)
+		{
+			for (int j = 0; j < n - 2; j++) sys[j][i] = 0;
+			continue;
+		}
+
 		if (i != j)
 		{
 			for (int k = 0; k < n - 1; k++)
