@@ -8,7 +8,9 @@ public:
 	double potential;
 	ChainVertex();
 	ChainVertex(coord posT);
-	ChainVertex(const ChainVertex &other);
+	ChainVertex(ChainVertex * vert);
+	void operator = (const ChainVertex &vert);
+	void operator = (ChainVertex * vert);
 	void draw(sf::RenderWindow * window);
 	~ChainVertex();
 };

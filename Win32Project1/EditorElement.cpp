@@ -138,6 +138,22 @@ EditorElement::EditorElement(coord posT, int isRotatedT)
 	updateRotation();
 }
 
+EditorElement::EditorElement(EditorElement * elem)
+{
+	pos.x = elem->pos.x;
+	pos.y = elem->pos.y;
+	isRotated = elem->isRotated;
+	resistance = elem->resistance;
+	realVoltage = elem->realVoltage;
+	sizeX = elem->sizeX;
+	sizeY = elem->sizeY;
+	deltaX = elem->deltaX;
+	deltaY = elem->deltaY;
+	v1 = elem->v1;
+	v2 = elem->v2;
+	texture = elem->texture;
+}
+
 
 EditorElement::~EditorElement()
 {
@@ -160,6 +176,22 @@ Resistor::Resistor(coord posT, int isRotatedT)
 	sizeY = resistorSizeY;
 	texture = resistorTexture;
 	updateRotation();
+}
+
+Resistor::Resistor(Resistor * elem)
+{
+	pos.x = elem->pos.x;
+	pos.y = elem->pos.y;
+	isRotated = elem->isRotated;
+	resistance = elem->resistance;
+	realVoltage = elem->realVoltage;
+	sizeX = elem->sizeX;
+	sizeY = elem->sizeY;
+	deltaX = elem->deltaX;
+	deltaY = elem->deltaY;
+	v1 = elem->v1;
+	v2 = elem->v2;
+	texture = elem->texture;
 }
 
 std::vector<std::pair<std::string,std::string>> Resistor::getInspectorElements() 
@@ -190,6 +222,22 @@ Battery::Battery(coord posT, int isRotatedT)
 	updateRotation();
 }
 
+Battery::Battery(Battery * elem)
+{
+	pos.x = elem->pos.x;
+	pos.y = elem->pos.y;
+	isRotated = elem->isRotated;
+	resistance = elem->resistance;
+	realVoltage = elem->realVoltage;
+	sizeX = elem->sizeX;
+	sizeY = elem->sizeY;
+	deltaX = elem->deltaX;
+	deltaY = elem->deltaY;
+	v1 = elem->v1;
+	v2 = elem->v2;
+	texture = elem->texture;
+}
+
 std::vector<std::pair<std::string, std::string>> Battery::getInspectorElements()
 {
 	std::vector<std::pair<std::string, std::string>> temp;
@@ -216,6 +264,22 @@ Lamp::Lamp(coord posT, int isRotatedT)
 	sizeY = lampSizeY;
 	texture = lampTexture;
 	updateRotation();
+}
+
+Lamp::Lamp(Lamp * elem)
+{
+	pos.x = elem->pos.x;
+	pos.y = elem->pos.y;
+	isRotated = elem->isRotated;
+	resistance = elem->resistance;
+	realVoltage = elem->realVoltage;
+	sizeX = elem->sizeX;
+	sizeY = elem->sizeY;
+	deltaX = elem->deltaX;
+	deltaY = elem->deltaY;
+	v1 = elem->v1;
+	v2 = elem->v2;
+	texture = elem->texture;
 }
 
 std::vector<std::pair<std::string, std::string>> Lamp::getInspectorElements()

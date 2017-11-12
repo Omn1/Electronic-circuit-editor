@@ -125,31 +125,65 @@ void updatePhysics()
 	for (int i = 0; i < vertexes.size(); i++) vertexes[i]->potential = potentials[i];
 }
 
-FieldVersion getCurrentVersion() {
-	FieldVersion temp(vertexes, wires, resistors, batteries, lamps);
+FieldVersion* getCurrentVersion() {
+	FieldVersion* temp = new FieldVersion(vertexes, wires, resistors, batteries, lamps);
 	return temp;
 }
 
-void setVersion(FieldVersion temp) {
-	wires.resize(temp.wires.size());
-	for (int i = 0; i < wires.size(); i++) {
-		wires[i] = temp.wires[i];
-	}
-	resistors.resize(temp.resistors.size());
-	for (int i = 0; i < resistors.size(); i++) {
-		resistors[i] = temp.resistors[i];
-	}
-	batteries.resize(temp.batteries.size());
-	for (int i = 0; i < batteries.size(); i++) {
-		batteries[i] = temp.batteries[i];
-	}
-	lamps.resize(temp.lamps.size());
-	for (int i = 0; i < lamps.size(); i++) {
-		lamps[i] = temp.lamps[i];
-	}
-	vertexes.resize(temp.vertexes.size());
+void setVersion(FieldVersion* temp) {
+	vertexes.resize(temp->vertexes.size());
+	std::vector<ChainVertex*> tvertexes(temp->vertexes.begin(), temp->vertexes.end());
+	sort(tvertexes.begin(), tvertexes.end());
 	for (int i = 0; i < vertexes.size(); i++) {
-		vertexes[i] = temp.vertexes[i];
+		vertexes[i] = new ChainVertex(tvertexes[i]);
+	}
+	wires.resize(temp->wires.size());
+	for (int i = 0; i < wires.size(); i++) {
+		wires[i] = new EditorElement(temp->wires[i]);
+		auto pos = std::lower_bound(tvertexes.begin(), tvertexes.end(), temp->wires[i]->v1);
+		if (pos != tvertexes.end() && (*pos == temp->wires[i]->v1)) {
+			wires[i]->v1 = vertexes[pos - tvertexes.begin()];
+		}
+		pos = std::lower_bound(tvertexes.begin(), tvertexes.end(), temp->wires[i]->v2);
+		if (pos != tvertexes.end() && (*pos == temp->wires[i]->v2)) {
+			wires[i]->v2 = vertexes[pos - tvertexes.begin()];
+		}
+	}
+	resistors.resize(temp->resistors.size());
+	for (int i = 0; i < resistors.size(); i++) {
+		resistors[i] = new Resistor(temp->resistors[i]);
+		auto pos = std::lower_bound(tvertexes.begin(), tvertexes.end(), temp->resistors[i]->v1);
+		if (pos != tvertexes.end() && (*pos == temp->resistors[i]->v1)) {
+			resistors[i]->v1 = vertexes[pos - tvertexes.begin()];
+		}
+		pos = std::lower_bound(tvertexes.begin(), tvertexes.end(), temp->resistors[i]->v2);
+		if (pos != tvertexes.end() && (*pos == temp->resistors[i]->v2)) {
+			resistors[i]->v2 = vertexes[pos - tvertexes.begin()];
+		}
+	}
+	batteries.resize(temp->batteries.size());
+	for (int i = 0; i < batteries.size(); i++) {
+		batteries[i] = new Battery(temp->batteries[i]);
+		auto pos = std::lower_bound(tvertexes.begin(), tvertexes.end(), temp->batteries[i]->v1);
+		if (pos != tvertexes.end() && (*pos == temp->batteries[i]->v1)) {
+			batteries[i]->v1 = vertexes[pos - tvertexes.begin()];
+		}
+		pos = std::lower_bound(tvertexes.begin(), tvertexes.end(), temp->batteries[i]->v2);
+		if (pos != tvertexes.end() && (*pos == temp->batteries[i]->v2)) {
+			batteries[i]->v2 = vertexes[pos - tvertexes.begin()];
+		}
+	}
+	lamps.resize(temp->lamps.size());
+	for (int i = 0; i < lamps.size(); i++) {
+		lamps[i] = new Lamp(temp->lamps[i]);
+		auto pos = std::lower_bound(tvertexes.begin(), tvertexes.end(), temp->lamps[i]->v1);
+		if (pos != tvertexes.end() && (*pos == temp->lamps[i]->v1)) {
+			lamps[i]->v1 = vertexes[pos - tvertexes.begin()];
+		}
+		pos = std::lower_bound(tvertexes.begin(), tvertexes.end(), temp->lamps[i]->v2);
+		if (pos != tvertexes.end() && (*pos == temp->lamps[i]->v2)) {
+			lamps[i]->v2 = vertexes[pos - tvertexes.begin()];
+		}
 	}
 }
 
@@ -950,6 +984,13 @@ void redoEvent() {
 	//setVersion(handler.getCurrentVersion());
 }
 
+void saveEvent() {
+	InspectorInput * input = new InspectorInput(0, 150, 300, 16);
+	input->fieldNames = { "File name:" };
+	input->fields = { "NONAME.txt" };
+	input->draw();
+	//handler.saveToFile(input->fields[0]);
+}
 int launchMainWindow()
 {
 	//AllocConsole();
@@ -1099,6 +1140,9 @@ int launchMainWindow()
 				else if (event.key.code == sf::Keyboard::Y && event.key.control == 1) {
 					redoEvent();
 				}
+				else if (event.key.code == sf::Keyboard::S && event.key.control == 1) {
+					saveEvent();
+				}
 			}
 			else if (event.type == sf::Event::Resized)
 				window.setView(view = sf::View(sf::FloatRect(0.f, 0.f,
@@ -1174,6 +1218,9 @@ int launchMainWindow()
 						}
 						else if (curButton == 4) {
 							openInputWindow();
+						}
+						else if (curButton == 5) {
+							saveEvent();
 						}
 					}
 				}

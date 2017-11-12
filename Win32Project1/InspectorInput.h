@@ -10,7 +10,11 @@ public:
 	sf::Vector2f size;
 	std::vector<std::string> fieldNames;
 	std::vector<std::string> fields;
+	bool isNumberOnly;
+	int sizeX1, sizeX2;
+	int mxlen;
 	InspectorInput();
+	InspectorInput(bool tisNumberOnly, int tsizeX1, int tsizeX2, int tmxlen);
 	~InspectorInput();
 	void draw();
 };

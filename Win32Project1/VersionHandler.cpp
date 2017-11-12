@@ -1,10 +1,9 @@
 #include "VersionHandler.h"
 
 
-
 VersionHandler::VersionHandler()
 	:curVersion(0)
-	, versions(std::vector<FieldVersion>(1, FieldVersion()))
+	, versions(std::vector<FieldVersion*>(1, new FieldVersion()))
 {
 }
 
@@ -13,11 +12,11 @@ VersionHandler::~VersionHandler()
 {
 }
 
-void VersionHandler::addVersion(FieldVersion version) {
+void VersionHandler::addVersion(FieldVersion* version) {
 	while (versions.size() - 1 != curVersion) {
 		versions.pop_back();
 	}
-	versions.push_back(FieldVersion(version));
+	versions.push_back(version);
 	curVersion++;
 }
 
@@ -33,7 +32,7 @@ void VersionHandler::redo() {
 	}
 }
 
-FieldVersion VersionHandler::getCurrentVersion()
+FieldVersion* VersionHandler::getCurrentVersion()
 {
 	return versions[curVersion];
 }

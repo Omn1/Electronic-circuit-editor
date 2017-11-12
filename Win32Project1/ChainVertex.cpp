@@ -15,10 +15,25 @@ ChainVertex::ChainVertex(coord posT)
 
 }
 
-ChainVertex::ChainVertex(const ChainVertex & other)
+ChainVertex::ChainVertex(ChainVertex * vert)
+{
+	pos.x = vert->pos.x;
+	pos.y = vert->pos.y;
+	potential = vert->potential;
+}
+
+void ChainVertex::operator=(const ChainVertex & other)
 {
 	pos.x = other.pos.x;
 	pos.y = other.pos.y;
+	potential = other.potential;
+}
+
+void ChainVertex::operator=(ChainVertex * vert)
+{
+	pos.x = vert->pos.x;
+	pos.y = vert->pos.y;
+	potential = vert->potential;
 }
 
 void ChainVertex::draw(sf::RenderWindow * window)

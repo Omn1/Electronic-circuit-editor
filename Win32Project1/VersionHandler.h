@@ -6,11 +6,11 @@ class VersionHandler
 public:
 	VersionHandler();
 	~VersionHandler();
-	void addVersion(FieldVersion version);
+	void addVersion(FieldVersion* version);
 	void undo();
 	void redo();
 	int curVersion;
-	std::vector<FieldVersion> versions;
-	FieldVersion getCurrentVersion();
+	std::vector<FieldVersion*> versions;
+	FieldVersion* getCurrentVersion();
 };
 

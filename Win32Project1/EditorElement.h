@@ -22,6 +22,7 @@ public:
 	sf::Texture *texture;
 	EditorElement();
 	EditorElement(coord pos, int isRotated);
+	EditorElement(EditorElement * elem);
 	~EditorElement();
 };
 
@@ -31,6 +32,7 @@ public:
 	//void draw(sf::RenderWindow * window);
 	Resistor();
 	Resistor(coord posT, int isRotatedT);
+	Resistor(Resistor * elem);
 	std::vector<std::pair<std::string, std::string>> getInspectorElements();
 };
 
@@ -40,6 +42,7 @@ public:
 	//void draw(sf::RenderWindow * window);
 	Battery();
 	Battery(coord posT, int isRotatedT);
+	Battery(Battery * elem);
 	std::vector<std::pair<std::string, std::string>> getInspectorElements();
 };
 
@@ -49,5 +52,6 @@ public:
 	//void draw(sf::RenderWindow * window);
 	Lamp();
 	Lamp(coord posT, int isRotatedT);
+	Lamp(Lamp * elem);
 	std::vector<std::pair<std::string, std::string>> getInspectorElements();
 };
