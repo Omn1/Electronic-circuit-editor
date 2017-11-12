@@ -338,25 +338,25 @@ bool checkUntrictCollision(ElementRect a, ElementRect b) {
 }
 
 
-bool isColliding(ElementRect rect) {
+bool isColliding(ElementRect rect, std::vector<Resistor*> &tresistors = resistors, std::vector<Battery*> &tbatteries = batteries, std::vector<Lamp*> &tlamps = lamps) {
 	if (rect.x1 > rect.x2) {
 		std::swap(rect.x1, rect.x2);
 	}
 	if (rect.y1 > rect.y2) {
 		std::swap(rect.y1, rect.y2);
 	}
-	for (int i = 0; i < resistors.size(); i++) {
-		if (checkStrictCollision(rect, resistors[i]->getElementRect())) {
+	for (int i = 0; i < tresistors.size(); i++) {
+		if (checkStrictCollision(rect, tresistors[i]->getElementRect())) {
 			return 1;
 		}
 	}
-	for (int i = 0; i < batteries.size(); i++) {
-		if (checkStrictCollision(rect, batteries[i]->getElementRect())) {
+	for (int i = 0; i < tbatteries.size(); i++) {
+		if (checkStrictCollision(rect, tbatteries[i]->getElementRect())) {
 			return 1;
 		}
 	}
-	for (int i = 0; i < lamps.size(); i++) {
-		if (checkStrictCollision(rect, lamps[i]->getElementRect())) {
+	for (int i = 0; i < tlamps.size(); i++) {
+		if (checkStrictCollision(rect, tlamps[i]->getElementRect())) {
 			return 1;
 		}
 	}
@@ -438,11 +438,11 @@ void addWireEnds() {
 					isP2 = 0;
 			}
 		}
-		if (isP1 && wires[i]->v1 == 0) {
+		if (isP1) {
 			putChainVertex(a, b, 0);
 			wires[i]->v1 = vertexes.back();
 		}
-		if (isP2 && wires[i]->v2 == 0) {
+		if (isP2) {
 			putChainVertex(c, d, 0);
 			wires[i]->v2 = vertexes.back();
 		}
@@ -573,6 +573,21 @@ void deleteInnerWires(int X1, int Y1, int X2, int Y2) {
 	addWireEnds();
 }
 
+void deleteInnerWires(ElementRect rect) {
+	int X1 = rect.x1, X2 = rect.x2, Y1 = rect.y1, Y2 = rect.y2;
+	std::vector<EditorElement*> twires;
+	for (int i = 0; i < wires.size(); i++) {
+		float a = wires[i]->pos.x, b = wires[i]->pos.y;
+		float c = a + (1 - wires[i]->isRotated),
+			d = b + wires[i]->isRotated;
+		if (!(a >= X1 && c <= X2 && b >= Y1 && d <= Y2)) {
+			twires.push_back(wires[i]);
+		}
+	}
+	wires = twires;
+	addWireEnds();
+}
+
 void deleteStrictInnerWires(int X1, int Y1, int X2, int Y2) {
 	std::vector<EditorElement*> twires;
 	for (int i = 0; i < wires.size(); i++) {
@@ -584,6 +599,33 @@ void deleteStrictInnerWires(int X1, int Y1, int X2, int Y2) {
 		}
 	}
 	wires = twires;
+	addWireEnds();
+}
+
+void deleteStrictInnerWires(ElementRect rect) {
+	int X1 = rect.x1, X2 = rect.x2, Y1 = rect.y1, Y2 = rect.y2;
+	std::vector<EditorElement*> twires;
+	for (int i = 0; i < wires.size(); i++) {
+		float a = wires[i]->pos.x, b = wires[i]->pos.y;
+		float c = a + (1 - wires[i]->isRotated),
+			d = b + wires[i]->isRotated;
+		if (!(a < X2 && X1 < c && b < Y2 && Y1 < d)) {
+			twires.push_back(wires[i]);
+		}
+	}
+	wires = twires;
+	addWireEnds();
+}
+
+void deleteStrictInnerVertexes(ElementRect rect) {
+	int X1 = rect.x1, X2 = rect.x2, Y1 = rect.y1, Y2 = rect.y2;
+	std::vector<ChainVertex*> tvertexes;
+	for (int i = 0; i < vertexes.size(); i++) {
+		if (!checkStrictCollision(rect, { vertexes[i]->pos.x, vertexes[i]->pos.x, vertexes[i]->pos.y, vertexes[i]->pos.y })) {
+			tvertexes.push_back(vertexes[i]);
+		}
+	}
+	vertexes = tvertexes;
 	addWireEnds();
 }
 
@@ -611,6 +653,7 @@ void putResistor() {
 	if (isColliding(temp.getElementRect())) {
 		return;
 	}
+	deleteStrictInnerVertexes(temp.getElementRect());
 	if (isRotated % 2 == 0) {
 		deleteStrictInnerWires(curX, curY, curX + resistorSizeX, curY + resistorSizeY);
 	}
@@ -643,6 +686,7 @@ void putBattery() {
 	if (isColliding(temp.getElementRect())) {
 		return;
 	}
+	deleteStrictInnerVertexes(temp.getElementRect());
 	if (isRotated % 2 == 0) {
 		deleteStrictInnerWires(curX, curY, curX + batterySizeX, curY + batterySizeY);
 	}
@@ -675,6 +719,7 @@ void putLamp() {
 	if (isColliding(temp.getElementRect())) {
 		return;
 	}
+	deleteStrictInnerVertexes(temp.getElementRect());
 	if (isRotated % 2 == 0) {
 		deleteStrictInnerWires(curX, curY, curX + lampSizeX, curY + lampSizeY);
 	}
@@ -930,16 +975,22 @@ void moveSelection(float deltaX, float deltaY) {
 	for (int i = 0; i < resistors.size(); i++) {
 		if (checkStrictCollision(temp, resistors[i]->getElementRect())) {
 			resistors[i]->move(deltaX, deltaY);
+			deleteInnerWires(resistors[i]->getElementRect());
+			deleteStrictInnerVertexes(resistors[i]->getElementRect());
 		}
 	}
 	for (int i = 0; i < batteries.size(); i++) {
 		if (checkStrictCollision(temp, batteries[i]->getElementRect())) {
 			batteries[i]->move(deltaX, deltaY);
+			deleteInnerWires(batteries[i]->getElementRect());
+			deleteStrictInnerVertexes(batteries[i]->getElementRect());
 		}
 	}
 	for (int i = 0; i < lamps.size(); i++) {
 		if (checkStrictCollision(temp, lamps[i]->getElementRect())) {
 			lamps[i]->move(deltaX, deltaY);
+			deleteInnerWires(lamps[i]->getElementRect());
+			deleteStrictInnerVertexes(lamps[i]->getElementRect());
 		}
 	}
 	addWireEnds();
@@ -954,14 +1005,69 @@ bool checkMoveInField() {
 	return (tstartX >= 0 && tstartY >= 0);
 }
 
+ElementRect getMovedRect(ElementRect rect, float deltaX, float deltaY) {
+	return{ rect.x1 + deltaX, rect.x2 + deltaX, rect.y1 + deltaY, rect.y2 + deltaY };
+}
+
+bool checkMoveNotColliding(float deltaX, float deltaY) {
+	float X1 = startX, X2 = selectionEndX, Y1 = startY, Y2 = selectionEndY;
+	if (X1 > X2) {
+		std::swap(X1, X2);
+	}
+	if (Y1 > Y2) {
+		std::swap(Y1, Y2);
+	}
+	ElementRect temp = { X1,X2,Y1,Y2 };
+	std::vector<Resistor*> tresistors;
+	std::vector<Battery*> tbatteries;
+	std::vector<Lamp*> tlamps;
+	for (int i = 0; i < resistors.size(); i++) {
+		if (!checkStrictCollision(temp, resistors[i]->getElementRect())) {
+			tresistors.push_back(resistors[i]);
+		}
+	}
+	for (int i = 0; i < batteries.size(); i++) {
+		if (!checkStrictCollision(temp, batteries[i]->getElementRect())) {
+			tbatteries.push_back(batteries[i]);
+		}
+	}
+	for (int i = 0; i < lamps.size(); i++) {
+		if (!checkStrictCollision(temp, lamps[i]->getElementRect())) {
+			tlamps.push_back(lamps[i]);
+		}
+	}
+	for (int i = 0; i < resistors.size(); i++) {
+		if (checkStrictCollision(temp, resistors[i]->getElementRect())) {
+			if (isColliding(getMovedRect(resistors[i]->getElementRect(), deltaX, deltaY), tresistors, tbatteries, tlamps)) {
+				return 0;
+			}
+		}
+	}
+	for (int i = 0; i < batteries.size(); i++) {
+		if (checkStrictCollision(temp, batteries[i]->getElementRect())) {
+			if (isColliding(getMovedRect(batteries[i]->getElementRect(), deltaX, deltaY), tresistors, tbatteries, tlamps)) {
+				return 0;
+			}
+		}
+	}
+	for (int i = 0; i < lamps.size(); i++) {
+		if (checkStrictCollision(temp, lamps[i]->getElementRect())) {
+			if (isColliding(getMovedRect(lamps[i]->getElementRect(), deltaX, deltaY), tresistors, tbatteries, tlamps)) {
+				return 0;
+			}
+		}
+	}
+	return 1;
+}
+
 void finishMoving() {
-	if (!checkMoveInField()) {
+	getCurrentFlooredFieldCoords(moveEndX, moveEndY);
+	if ((!checkMoveInField()) || (!checkMoveNotColliding(moveEndX - moveStartX, moveEndY - moveStartY))) {
 		isMoving = 0;
 		curMode = 1;
 	}
 	if (!isMoving)
 		return;
-	getCurrentFlooredFieldCoords(moveEndX, moveEndY);
 	moveSelection(moveEndX - moveStartX, moveEndY - moveStartY);
 	startX += moveEndX - moveStartX;
 	startY += moveEndY - moveStartY;
@@ -978,20 +1084,62 @@ void drawMovePreview() {
 	endY = selectionEndY - moveStartY + curY;
 	tstartX = startX - moveStartX + curX;
 	tstartY = startY - moveStartY + curY;
-	drawDottedRect(tstartX*cellSize + leftMargin, tstartY*cellSize + topMargin, endX*cellSize + leftMargin, endY*cellSize + topMargin, sf::Color::Green);
+	sf::Color tcol = sf::Color::Green;
+	if (!checkMoveNotColliding(curX - moveStartX, curY - moveStartY))
+		tcol = sf::Color::Red;
+	drawDottedRect(tstartX*cellSize + leftMargin, tstartY*cellSize + topMargin, endX*cellSize + leftMargin, endY*cellSize + topMargin, tcol);
 }
 
 void rotateItem() {
 	if (selectedItemType == 0) {
 		resistors[selectedItemI]->rotate();
+		std::vector<Resistor*> tresistors;
+		for (int i = 0; i < resistors.size(); i++) {
+			if (i != selectedItemI) {
+				tresistors.push_back(resistors[i]);
+			}
+		}
+		if (isColliding(resistors[selectedItemI]->getElementRect(), tresistors, batteries, lamps)) {
+			resistors[selectedItemI]->rotate();
+			resistors[selectedItemI]->rotate();
+			resistors[selectedItemI]->rotate();
+		}
+		deleteInnerWires(resistors[selectedItemI]->getElementRect());
+		deleteStrictInnerVertexes(resistors[selectedItemI]->getElementRect());
 		setSelection(resistors[selectedItemI]->getElementRect());
 	}
 	else if (selectedItemType == 1) {
-		batteries[selectedItemI]->rotate();
+		batteries[selectedItemI]->rotate(); 
+		std::vector<Battery*> tbatteries; 
+		for (int i = 0; i < batteries.size(); i++) {
+			if (i != selectedItemI) {
+				tbatteries.push_back(batteries[i]);
+			}
+		}
+		if (isColliding(batteries[selectedItemI]->getElementRect(), resistors, tbatteries, lamps)) {
+			batteries[selectedItemI]->rotate();
+			batteries[selectedItemI]->rotate();
+			batteries[selectedItemI]->rotate();
+		}
+		deleteInnerWires(batteries[selectedItemI]->getElementRect());
+		deleteStrictInnerVertexes(batteries[selectedItemI]->getElementRect());
 		setSelection(batteries[selectedItemI]->getElementRect());
 	}
 	else if (selectedItemType == 2) {
-		lamps[selectedItemI]->rotate();
+		lamps[selectedItemI]->rotate(); 
+		std::vector<Lamp*> tlamps;
+		for (int i = 0; i < lamps.size(); i++) {
+			if (i != selectedItemI) {
+				tlamps.push_back(lamps[i]);
+			}
+		}
+		if (isColliding(lamps[selectedItemI]->getElementRect(), resistors, batteries, tlamps)) {
+			lamps[selectedItemI]->rotate();
+			lamps[selectedItemI]->rotate();
+			lamps[selectedItemI]->rotate();
+		}
+		deleteInnerWires(lamps[selectedItemI]->getElementRect());
+		deleteStrictInnerVertexes(lamps[selectedItemI]->getElementRect());
 		setSelection(lamps[selectedItemI]->getElementRect());
 	}
 	updateVersion();
@@ -1001,7 +1149,7 @@ ItemInspector inspector;
 
 void drawItemInspector() {
 	if (isItemSelected) {
-		updatePhysics();
+		//updatePhysics();
 		if (selectedItemType == 0) {
 			inspector.sections = resistors[selectedItemI]->getInspectorElements();
 		}
