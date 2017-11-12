@@ -20,8 +20,8 @@ float gridOutlineThickness = 4;
 float n, m;
 float cellSize = 60;
 float standartCellSize = 60;
-float editorFieldSizeX = 1280;
-float editorFieldSizeY = 720;
+float editorFieldSizeX = 300;
+float editorFieldSizeY = 300;
 float topMargin = 50;
 float leftMargin = 100;
 float separatorThickness = -5;
@@ -960,6 +960,7 @@ void openInputWindow() {
 	else if (selectedItemType == 2) {
 		lamps[selectedItemI]->resistance = atof(inputWindow->fields[0].c_str());
 	}
+	updateVersion();
 }
 
 void rotateEvent() {
@@ -975,12 +976,14 @@ void rotateEvent() {
 void undoEvent() {
 	handler.undo();
 	isItemSelected = 0;
+	isSelected = 0;
 	//setVersion(handler.getCurrentVersion());
 }
 
 void redoEvent() {
 	handler.redo();
 	isItemSelected = 0;
+	isSelected = 0;
 	//setVersion(handler.getCurrentVersion());
 }
 

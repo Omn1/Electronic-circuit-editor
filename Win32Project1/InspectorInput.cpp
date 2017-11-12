@@ -1,6 +1,5 @@
 #include "InspectorInput.h"
 #include <string>
-#include "Editor.h"
 #include <SFML/Graphics.hpp>
 #include <vector>
 #include <algorithm>

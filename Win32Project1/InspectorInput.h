@@ -1,6 +1,8 @@
 #pragma once
 #include <string>
 #include <SFML/Graphics.hpp>
+#include "Editor.h"
+
 class InspectorInput
 {
 public:
