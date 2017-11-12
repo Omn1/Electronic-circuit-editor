@@ -20,8 +20,8 @@ float gridOutlineThickness = 4;
 float n, m;
 float cellSize = 60;
 float standartCellSize = 60;
-float editorFieldSizeX = 300;
-float editorFieldSizeY = 300;
+float editorFieldSizeX = 500;
+float editorFieldSizeY = 500;
 float topMargin = 50;
 float leftMargin = 100;
 float separatorThickness = -5;
@@ -1060,9 +1060,42 @@ bool checkMoveNotColliding(float deltaX, float deltaY) {
 	return 1;
 }
 
+bool checkMovedElementsInField(float deltaX, float deltaY) {
+	float X1 = startX, X2 = selectionEndX, Y1 = startY, Y2 = selectionEndY;
+	if (X1 > X2) {
+		std::swap(X1, X2);
+	}
+	if (Y1 > Y2) {
+		std::swap(Y1, Y2);
+	}
+	ElementRect temp = { X1,X2,Y1,Y2 };
+	for (int i = 0; i < resistors.size(); i++) {
+		if (checkStrictCollision(temp, resistors[i]->getElementRect())) {
+			if (resistors[i]->getElementRect().x1 + deltaX < 0 || resistors[i]->getElementRect().y1 + deltaY < 0) {
+				return 0;
+			}
+		}
+	}
+	for (int i = 0; i < batteries.size(); i++) {
+		if (checkStrictCollision(temp, batteries[i]->getElementRect())) {
+			if (batteries[i]->getElementRect().x1 + deltaX < 0 || batteries[i]->getElementRect().y1 + deltaY < 0) {
+				return 0;
+			}
+		}
+	}
+	for (int i = 0; i < lamps.size(); i++) {
+		if (checkStrictCollision(temp, lamps[i]->getElementRect())) {
+			if (lamps[i]->getElementRect().x1 + deltaX < 0 || lamps[i]->getElementRect().y1 + deltaY < 0) {
+				return 0;
+			}
+		}
+	}
+	return 1;
+}
+
 void finishMoving() {
 	getCurrentFlooredFieldCoords(moveEndX, moveEndY);
-	if ((!checkMoveInField()) || (!checkMoveNotColliding(moveEndX - moveStartX, moveEndY - moveStartY))) {
+	if ((!checkMoveInField()) || (!checkMoveNotColliding(moveEndX - moveStartX, moveEndY - moveStartY) || (!checkMovedElementsInField(moveEndX - moveStartX, moveEndY - moveStartY)))) {
 		isMoving = 0;
 		curMode = 1;
 	}
@@ -1085,7 +1118,7 @@ void drawMovePreview() {
 	tstartX = startX - moveStartX + curX;
 	tstartY = startY - moveStartY + curY;
 	sf::Color tcol = sf::Color::Green;
-	if (!checkMoveNotColliding(curX - moveStartX, curY - moveStartY))
+	if ((!checkMoveNotColliding(curX - moveStartX, curY - moveStartY)) || (!checkMovedElementsInField(curX - moveStartX, curY - moveStartY)))
 		tcol = sf::Color::Red;
 	drawDottedRect(tstartX*cellSize + leftMargin, tstartY*cellSize + topMargin, endX*cellSize + leftMargin, endY*cellSize + topMargin, tcol);
 }
@@ -1177,23 +1210,12 @@ void drawDynamicBG() {
 	sf::RectangleShape vline(sf::Vector2f(editorFieldSizeX, gridThickness));
 	sf::RectangleShape hline(sf::Vector2f(gridThickness, editorFieldSizeY));
 	sf::RectangleShape background(sf::Vector2f(leftMargin + editorFieldSizeX, topMargin + editorFieldSizeY));
-	sf::RectangleShape menuBarBG(sf::Vector2f(leftMargin + editorFieldSizeX - separatorThickness, topMargin));
-	menuBarBG.setFillColor(sf::Color::White);
-	menuBarBG.setOutlineThickness(separatorThickness);
-	menuBarBG.setOutlineColor(mainColor);
 	background.setFillColor(sf::Color(240, 240, 240));
 	vline.setFillColor(sf::Color(120, 120, 120));
 	hline.setFillColor(sf::Color(120, 120, 120));
 	vline.setSize(sf::Vector2f(editorFieldSizeX, gridThickness));
 	hline.setSize(sf::Vector2f(gridThickness, editorFieldSizeY));
-	sf::RectangleShape itemBarBG(sf::Vector2f(leftMargin, editorFieldSizeY));
-	itemBarBG.setFillColor(sf::Color::White);
-	itemBarBG.setOutlineColor(mainColor);
-	itemBarBG.setOutlineThickness(separatorThickness);
-	itemBarBG.setPosition(sf::Vector2f(0, topMargin));
 	window.draw(background);
-	window.draw(menuBarBG);
-	window.draw(itemBarBG);
 	for (int i = 1; i < n; i++) {
 		vline.setPosition(sf::Vector2f(leftMargin, topMargin + cellSize*i));
 		window.draw(vline);
@@ -1393,6 +1415,16 @@ int launchMainWindow()
 	selectedModeBG.setOutlineThickness(separatorThickness);
 	selectedModeBG.setPosition(sf::Vector2f(-separatorThickness, -separatorThickness));
 
+	sf::RectangleShape menuBarBG(sf::Vector2f(leftMargin + editorFieldSizeX - separatorThickness, topMargin));
+	sf::RectangleShape itemBarBG(sf::Vector2f(leftMargin, editorFieldSizeY));
+	menuBarBG.setFillColor(sf::Color::White);
+	menuBarBG.setOutlineThickness(separatorThickness);
+	menuBarBG.setOutlineColor(mainColor);
+	itemBarBG.setFillColor(sf::Color::White);
+	itemBarBG.setOutlineColor(mainColor);
+	itemBarBG.setOutlineThickness(separatorThickness);
+	itemBarBG.setPosition(sf::Vector2f(0, topMargin));
+
 	while (window.isOpen())
 	{
 		sf::Event event;
@@ -1518,16 +1550,6 @@ int launchMainWindow()
 
 		window.clear();
 		drawDynamicBG();
-		window.draw(wireIconBG);
-		window.draw(resistorIconBG);
-		window.draw(batteryIconBG);
-		window.draw(lampIconBG);
-		window.draw(vertexIconBG);
-		window.draw(drawButtonBG);
-		window.draw(selectButtonBG);
-		window.draw(rotateButtonBG);
-		window.draw(deleteButtonBG);
-		window.draw(editButtonBG);
 		sf::RectangleShape temp;
 		temp.setFillColor(sf::Color::Black);
 		temp.setOutlineThickness(gridOutlineThickness);
@@ -1602,6 +1624,20 @@ int launchMainWindow()
 				isMoving = 0;
 			}
 		}
+		menuBarBG.setSize(sf::Vector2f(leftMargin + editorFieldSizeX - separatorThickness, topMargin));
+		itemBarBG.setSize(sf::Vector2f(leftMargin, editorFieldSizeY));
+		window.draw(menuBarBG);
+		window.draw(itemBarBG);
+		window.draw(wireIconBG);
+		window.draw(resistorIconBG);
+		window.draw(batteryIconBG);
+		window.draw(lampIconBG);
+		window.draw(vertexIconBG);
+		window.draw(drawButtonBG);
+		window.draw(selectButtonBG);
+		window.draw(rotateButtonBG);
+		window.draw(deleteButtonBG);
+		window.draw(editButtonBG);
 		window.draw(wireItem);
 		window.draw(resistorItem);
 		window.draw(batteryItem);
