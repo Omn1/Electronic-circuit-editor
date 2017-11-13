@@ -51,6 +51,10 @@ public:
 	std::vector<double> getPotentials();
 	std::vector<double> getInductorsCurrents();
 	std::vector<double> getCapacitorsCurrents();
+	std::vector<double> getACBatteriesCurrents();
+	std::vector<double> getDCBatteriesCurrents();
+	std::vector<bool> getACBatteriesShortCircuits();
+	std::vector<bool> getDCBAtteriesShortCircuits();
 	// --------------------------
 
 private:
@@ -77,7 +81,8 @@ private:
 	std::vector <double> potentials;
 	std::list <Edge> capacitors, inductors, DCBatteries;
 	std::list <Edge3> ACBatteries;
-	std::list <double> capacitorsCurrent, inductorsCurrent;
+	std::vector <double> capacitorsCurrent, inductorsCurrent, DCBatteriesCurrents, ACBatteriesCurrents;
+	std::vector <bool> DCShortCircuit, ACShortCircuit;
 	// --------------------------
 
 	// graph size functions + variables
