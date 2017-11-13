@@ -203,7 +203,9 @@ void SchemeCalculator::recalculate(double time)
 {
 	clearPhysics();
 	std::vector <comp> local_p(n), temp;
+	int i;
 
+	i = 0;
 	for (auto battery : ACBatteries)
 	{
 		int ss = battery.getI();
@@ -214,40 +216,46 @@ void SchemeCalculator::recalculate(double time)
 		s = order[ss];
 		t = order[tt];
 
-		for (auto inductor : inductors) addEdge(inductor.getI(), inductor.getJ(), comp(0, battery.getL2() * inductor.getLength()));
-		for (auto capacitor : capacitors) addEdge(capacitor.getI(), capacitor.getJ(), double(-1) / (battery.getL2() * capacitor.getLength()));
-		
-		temp = getLocalPotentials();
-		for (int i = 0; i < n; i++) local_p[i] = temp[order[i]];
+		if (s == t) ACShortCircuit[i] = true;
+		else
+		{
+			for (auto inductor : inductors) addEdge(inductor.getI(), inductor.getJ(), comp(0, battery.getL2() * inductor.getLength()));
+			for (auto capacitor : capacitors) addEdge(capacitor.getI(), capacitor.getJ(), double(-1) / (battery.getL2() * capacitor.getLength()));
 
-		for (int i = 0; i < n; i++) local_p[i] *= comp(battery.getL1(), battery.getL3());
-		for (int i = 0; i < n; i++)
-		{
-			potentials[i] += abs(local_p[i]) * cos(battery.getL2() * time + arg(local_p[i]));
-		}
-		
-		std::list <double>::iterator it;
-		it = inductorsCurrent.begin();
-		for (auto inductor : inductors)
-		{
-			comp res = comp(0, battery.getL2() * inductor.getLength());
-			addEdge(inductor.getI(), inductor.getJ(), -res);
-			comp cur = (local_p[inductor.getJ()] - local_p[inductor.getI()]) / res;
-			*it += abs(cur) * cos(battery.getL2() * time + arg(cur));
-			it++;
-		}
-		it = capacitorsCurrent.begin();
-		for (auto capacitor : capacitors)
-		{
-			comp res = comp(0, double(-1) / (battery.getL2() * capacitor.getLength()));
-			addEdge(capacitor.getI(), capacitor.getJ(), -res);
-			comp cur = (local_p[capacitor.getJ()] - local_p[capacitor.getI()]) / res;
-			*it += abs(cur) * cos(battery.getL2() * time + arg(cur));
-			it++;
+			temp = getLocalPotentials();
+			for (int i = 0; i < n; i++) local_p[i] = temp[order[i]];
+
+			for (int i = 0; i < n; i++) local_p[i] *= comp(battery.getL1(), battery.getL3());
+			for (int i = 0; i < n; i++)
+			{
+				potentials[i] += abs(local_p[i]) * cos(battery.getL2() * time + arg(local_p[i]));
+			}
+
+			std::vector <double>::iterator it;
+			it = inductorsCurrent.begin();
+			for (auto inductor : inductors)
+			{
+				comp res = comp(0, battery.getL2() * inductor.getLength());
+				addEdge(inductor.getI(), inductor.getJ(), -res);
+				comp cur = (local_p[inductor.getI()] - local_p[inductor.getJ()]) / res;
+				*it += abs(cur) * cos(battery.getL2() * time + arg(cur));
+				it++;
+			}
+			it = capacitorsCurrent.begin();
+			for (auto capacitor : capacitors)
+			{
+				comp res = comp(0, double(-1) / (battery.getL2() * capacitor.getLength()));
+				addEdge(capacitor.getI(), capacitor.getJ(), -res);
+				comp cur = (local_p[capacitor.getI()] - local_p[capacitor.getJ()]) / res;
+				*it += abs(cur) * cos(battery.getL2() * time + arg(cur));
+				it++;
+			}
 		}
 
 		wires[ss][tt]++;
 		wires[tt][ss]++;
+
+		i++;
 	}
 
 	for (auto inductor : inductors)
@@ -255,6 +263,7 @@ void SchemeCalculator::recalculate(double time)
 		wires[inductor.getI()][inductor.getJ()]++;
 		wires[inductor.getJ()][inductor.getI()]++;
 	}
+	i = 0;
 	for (auto battery : DCBatteries)
 	{
 		int ss = battery.getI();
@@ -265,19 +274,97 @@ void SchemeCalculator::recalculate(double time)
 		s = order[ss];
 		t = order[tt];
 
-		temp = getLocalPotentials();
-		for (int i = 0; i < n; i++) local_p[i] = temp[order[i]];
+		if (s == t) DCShortCircuit[i] = true;
+		else
+		{
+			temp = getLocalPotentials();
+			for (int i = 0; i < n; i++) local_p[i] = temp[order[i]];
 
-		for (int i = 0; i < n; i++) local_p[i] *= battery.getLength();
-		for (int i = 0; i < n; i++) potentials[i] += abs(local_p[i]);
+			for (int i = 0; i < n; i++) local_p[i] *= battery.getLength();
+			for (int i = 0; i < n; i++) potentials[i] += abs(local_p[i]);
+		}
 
 		wires[ss][tt]++;
 		wires[tt][ss]++;
+
+		i++;
 	}
 	for (auto inductor : inductors)
 	{
 		wires[inductor.getI()][inductor.getJ()]--;
 		wires[inductor.getJ()][inductor.getI()]--;
+	}
+
+	i = 0;
+	for (auto battery : ACBatteries)
+	{
+		if (!ACShortCircuit[i])
+		{
+			int ss = battery.getI();
+			int tt = battery.getJ();
+			wires[ss][tt]--;
+			wires[tt][ss]--;
+			updateGraph();
+			s = order[ss];
+			t = order[tt];
+			
+			int j;
+			j = 0;
+			for (auto inductor : inductors)
+			{
+				if (inductor.getI() == s || inductor.getJ() == s) ACBatteriesCurrents[i] += abs(inductorsCurrent[j]);
+				j++;
+			}
+			j = 0;
+			for (auto capacitor : capacitors)
+			{
+				if (capacitor.getI() == s || capacitor.getJ() == s) ACBatteriesCurrents[i] += abs(capacitorsCurrent[j]);
+				j++;
+			}
+			for (int j = 0; j < n; j++) ACBatteriesCurrents[i] += abs(potentials[j] - potentials[s]) * abs(graph[s][j]);
+			ACBatteriesCurrents[i] /= 2;
+
+			wires[ss][tt]++;
+			wires[tt][ss]++;
+		}
+
+		i++;
+	}
+
+	i = 0;
+	for (auto battery : DCBatteries)
+	{
+		if (!DCShortCircuit[i])
+		{
+			int ss = battery.getI();
+			int tt = battery.getJ();
+			wires[ss][tt]--;
+			wires[tt][ss]--;
+			updateGraph();
+			s = order[ss];
+			t = order[tt];
+
+			int j;
+			j = 0;
+			for (auto inductor : inductors)
+			{
+				if (inductor.getI() == s || inductor.getJ() == s) DCBatteriesCurrents[i] += abs(inductorsCurrent[j]);
+				j++;
+			}
+			j = 0;
+			for (auto capacitor : capacitors)
+			{
+				if (capacitor.getI() == s || capacitor.getJ() == s) DCBatteriesCurrents[i] += abs(capacitorsCurrent[j]);
+				j++;
+			}
+			for (int j = 0; j < n; j++) DCBatteriesCurrents[i] += abs(potentials[j] - potentials[s]) * abs(graph[s][j]);
+			DCBatteriesCurrents[i] /= 2;
+
+			wires[ss][tt]++;
+			wires[tt][ss]++;
+		}
+
+		i++;
 	}
 }
 
@@ -331,6 +418,18 @@ void SchemeCalculator::clearPhysics()
 
 	inductorsCurrent.clear();
 	inductorsCurrent.resize(inductors.size(), 0);
+
+	DCBatteriesCurrents.clear();
+	DCBatteriesCurrents.resize(DCBatteries.size(), 0);
+
+	ACBatteriesCurrents.clear();
+	ACBatteriesCurrents.resize(ACBatteries.size(), 0);
+
+	DCShortCircuit.clear();
+	DCShortCircuit.resize(DCBatteries.size(), false);
+
+	ACShortCircuit.clear();
+	ACShortCircuit.resize(ACBatteries.size(), false);
 }
 
 std::vector <comp> SchemeCalculator::getLocalPotentials()
@@ -451,5 +550,25 @@ std::vector<double> SchemeCalculator::getCapacitorsCurrents()
 	v.clear();
 	for (auto it = capacitorsCurrent.begin(); it != capacitorsCurrent.end(); it++) v.push_back(*it);
 	return v;
+}
+
+std::vector<double> SchemeCalculator::getACBatteriesCurrents()
+{
+	return ACBatteriesCurrents;
+}
+
+std::vector<double> SchemeCalculator::getDCBatteriesCurrents()
+{
+	return DCBatteriesCurrents;
+}
+
+std::vector<bool> SchemeCalculator::getACBatteriesShortCircuits()
+{
+	return ACShortCircuit;
+}
+
+std::vector<bool> SchemeCalculator::getDCBAtteriesShortCircuits()
+{
+	return DCShortCircuit;
 }
 // end of getting function block
