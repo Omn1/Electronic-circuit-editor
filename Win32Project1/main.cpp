@@ -262,9 +262,9 @@ void updatePhysics()
 	std::vector <double> potentials = calc.getPotentials();
 	for (int i = 0; i < vertexes.size(); i++) vertexes[i]->potential = potentials[i];
 	std::vector <double> batteriesCurrents = calc.getDCBatteriesCurrents();
-	for (int i = 0; i < batteries.size(); i++) batteries[i]->setCurrent(batteriesCurrents[i]);
+	//for (int i = 0; i < batteries.size(); i++) batteries[i]->setCurrent(batteriesCurrents[i]);
 	std::vector <bool> shortCircuits = calc.getDCBAtteriesShortCircuits();
-	for (int i = 0; i < batteries.size(); i++) batteries[i]->setShortCircuit(shortCircuits[i]);
+	//for (int i = 0; i < batteries.size(); i++) batteries[i]->setShortCircuit(shortCircuits[i]);
 }
 
 FieldVersion getCurrentVersion() {

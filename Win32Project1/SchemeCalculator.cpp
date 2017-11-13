@@ -257,7 +257,7 @@ void SchemeCalculator::recalculate(double time)
 
 		i++;
 	}
-
+	
 	for (auto inductor : inductors)
 	{
 		wires[inductor.getI()][inductor.getJ()]++;
@@ -294,7 +294,7 @@ void SchemeCalculator::recalculate(double time)
 		wires[inductor.getI()][inductor.getJ()]--;
 		wires[inductor.getJ()][inductor.getI()]--;
 	}
-
+	
 	i = 0;
 	for (auto battery : ACBatteries)
 	{
@@ -312,13 +312,13 @@ void SchemeCalculator::recalculate(double time)
 			j = 0;
 			for (auto inductor : inductors)
 			{
-				if (inductor.getI() == s || inductor.getJ() == s) ACBatteriesCurrents[i] += abs(inductorsCurrent[j]);
+				if (order[inductor.getI()] == s || order[inductor.getJ()] == s) ACBatteriesCurrents[i] += abs(inductorsCurrent[j]);
 				j++;
 			}
 			j = 0;
 			for (auto capacitor : capacitors)
 			{
-				if (capacitor.getI() == s || capacitor.getJ() == s) ACBatteriesCurrents[i] += abs(capacitorsCurrent[j]);
+				if (order[capacitor.getI()] == s || order[capacitor.getJ()] == s) ACBatteriesCurrents[i] += abs(capacitorsCurrent[j]);
 				j++;
 			}
 			for (int j = 0; j < n; j++) ACBatteriesCurrents[i] += abs(potentials[j] - potentials[s]) * abs(graph[s][j]);
@@ -330,7 +330,7 @@ void SchemeCalculator::recalculate(double time)
 
 		i++;
 	}
-
+	return;
 	i = 0;
 	for (auto battery : DCBatteries)
 	{
@@ -348,15 +348,16 @@ void SchemeCalculator::recalculate(double time)
 			j = 0;
 			for (auto inductor : inductors)
 			{
-				if (inductor.getI() == s || inductor.getJ() == s) DCBatteriesCurrents[i] += abs(inductorsCurrent[j]);
+				if (order[inductor.getI()] == s || order[inductor.getJ()] == s) DCBatteriesCurrents[i] += abs(inductorsCurrent[j]);
 				j++;
 			}
 			j = 0;
 			for (auto capacitor : capacitors)
 			{
-				if (capacitor.getI() == s || capacitor.getJ() == s) DCBatteriesCurrents[i] += abs(capacitorsCurrent[j]);
+				if (order[capacitor.getI()] == s || order[capacitor.getJ()] == s) DCBatteriesCurrents[i] += abs(capacitorsCurrent[j]);
 				j++;
 			}
+			
 			for (int j = 0; j < n; j++) DCBatteriesCurrents[i] += abs(potentials[j] - potentials[s]) * abs(graph[s][j]);
 			DCBatteriesCurrents[i] /= 2;
 
