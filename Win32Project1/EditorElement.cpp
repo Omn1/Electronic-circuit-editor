@@ -199,7 +199,7 @@ std::vector<std::pair<std::string,std::string>> Resistor::getInspectorElements()
 	std::vector<std::pair<std::string, std::string>> temp;
 	temp.push_back(make_pair(std::string("Item type:"), std::string("Resistor")));
 	temp.push_back(make_pair("Voltage:", std::to_string(getVoltage()).substr(0, 10)));
-	temp.push_back(make_pair("Current:", std::to_string(getVoltage() / resistance).substr(0, 10)));
+	temp.push_back(make_pair("Amperage:", std::to_string(getVoltage() / resistance).substr(0, 10)));
 	temp.push_back(make_pair("Resistance:", std::to_string(resistance).substr(0, 10)));
 	return temp;
 }
@@ -218,6 +218,7 @@ Battery::Battery(coord posT, int isRotatedT)
 {
 	sizeX = batterySizeX;
 	sizeY = batterySizeY;
+	resistance = 0;
 	texture = batteryTexture;
 	updateRotation();
 }
@@ -243,8 +244,7 @@ std::vector<std::pair<std::string, std::string>> Battery::getInspectorElements()
 	std::vector<std::pair<std::string, std::string>> temp;
 	temp.push_back(make_pair(std::string("Item type:"), std::string("Battery")));
 	temp.push_back(make_pair("Voltage:", std::to_string(realVoltage).substr(0, 10)));
-	temp.push_back(make_pair("Current:", std::to_string(getVoltage() / resistance).substr(0, 10)));
-	temp.push_back(make_pair("Resistance:", std::to_string(resistance).substr(0, 10)));
+	temp.push_back(make_pair("Amperage:", std::to_string(getVoltage() / resistance).substr(0, 10)));
 	return temp;
 }
 
@@ -287,7 +287,7 @@ std::vector<std::pair<std::string, std::string>> Lamp::getInspectorElements()
 	std::vector<std::pair<std::string, std::string>> temp;
 	temp.push_back(make_pair(std::string("Item type:"), std::string("Lamp")));
 	temp.push_back(make_pair("Voltage:", std::to_string(getVoltage()).substr(0,10)));
-	temp.push_back(make_pair("Current:", std::to_string(getVoltage() / resistance).substr(0, 10)));
+	temp.push_back(make_pair("Amperage:", std::to_string(getVoltage() / resistance).substr(0, 10)));
 	temp.push_back(make_pair("Resistance:", std::to_string(resistance).substr(0, 10)));
 	return temp;
 }

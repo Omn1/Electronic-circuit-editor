@@ -260,11 +260,11 @@ void updatePhysics()
 
 	calc.recalculate(timer.getElapsedTime().asSeconds());
 	std::vector <double> potentials = calc.getPotentials();
-	for (int i = 0; i < vertexes.size(); i++) vertexes[i]->potential = potentials[i];
-	std::vector <double> batteriesCurrents = calc.getDCBatteriesCurrents();
-	for (int i = 0; i < batteries.size(); i++) batteries[i]->setCurrent(batteriesCurrents[i]);
-	std::vector <bool> shortCircuits = calc.getDCBAtteriesShortCircuits();
-	for (int i = 0; i < batteries.size(); i++) batteries[i]->setShortCircuit(shortCircuits[i]);
+	//for (int i = 0; i < vertexes.size(); i++) vertexes[i]->potential = potentials[i];
+	//std::vector <double> batteriesCurrents = calc.getDCBatteriesCurrents();
+	//for (int i = 0; i < batteries.size(); i++) batteries[i]->setCurrent(batteriesCurrents[i]);
+	//std::vector <bool> shortCircuits = calc.getDCBAtteriesShortCircuits();
+	//for (int i = 0; i < batteries.size(); i++) batteries[i]->setShortCircuit(shortCircuits[i]);
 }
 
 FieldVersion* getCurrentVersion() {
@@ -1186,7 +1186,7 @@ ItemInspector inspector;
 
 void drawItemInspector() {
 	if (isItemSelected) {
-		//updatePhysics();
+		updatePhysics();
 		if (selectedItemType == 0) {
 			inspector.sections = resistors[selectedItemI]->getInspectorElements();
 		}
@@ -1239,8 +1239,8 @@ void openInputWindow() {
 		inputWindow->fields = { std::to_string(resistors[selectedItemI]->resistance).substr(0,8) };
 	}
 	else if (selectedItemType == 1) {
-		inputWindow->fieldNames = { "Resistance:", "Voltage:" };
-		inputWindow->fields = { std::to_string(batteries[selectedItemI]->resistance).substr(0,8), std::to_string(batteries[selectedItemI]->realVoltage).substr(0,8) };
+		inputWindow->fieldNames = { "Voltage:" };
+		inputWindow->fields = { std::to_string(batteries[selectedItemI]->realVoltage).substr(0,8) };
 	}
 	else if (selectedItemType == 2) {
 		inputWindow->fieldNames = { "Resistance:" };
@@ -1251,8 +1251,7 @@ void openInputWindow() {
 		resistors[selectedItemI]->resistance = atof(inputWindow->fields[0].c_str());
 	}
 	else if (selectedItemType == 1) {
-		batteries[selectedItemI]->resistance = atof(inputWindow->fields[0].c_str());
-		batteries[selectedItemI]->realVoltage = atof(inputWindow->fields[1].c_str());
+		batteries[selectedItemI]->realVoltage = atof(inputWindow->fields[0].c_str());
 	}
 	else if (selectedItemType == 2) {
 		lamps[selectedItemI]->resistance = atof(inputWindow->fields[0].c_str());
@@ -1504,6 +1503,7 @@ int launchMainWindow()
 							currentItem = tCurItem;
 							isRotated = 0;
 							curMode = 0;
+							isItemSelected = 0;
 						}
 					}
 					else if (event.mouseButton.y < topMargin) {
