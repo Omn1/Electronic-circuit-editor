@@ -32,6 +32,14 @@ void VersionHandler::redo() {
 	}
 }
 
+void VersionHandler::reset()
+{
+	curVersion = 0;
+	while (versions.size() - 1 != curVersion) {
+		versions.pop_back();
+	}
+}
+
 FieldVersion* VersionHandler::getCurrentVersion()
 {
 	return versions[curVersion];
