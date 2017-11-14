@@ -1414,6 +1414,8 @@ void drawDynamicBG() {
 void openInputWindow() {
 	if (!isItemSelected)
 		return;
+	if (selectedItemType == 4)
+		return;
 	InspectorInput * inputWindow = new InspectorInput();
 	if (selectedItemType == 0) {
 		inputWindow->fieldNames = { "Resistance:" };
