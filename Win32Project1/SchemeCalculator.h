@@ -55,6 +55,8 @@ public:
 	std::vector<double> getDCBatteriesCurrents();
 	std::vector<bool> getACBatteriesShortCircuits();
 	std::vector<bool> getDCBAtteriesShortCircuits();
+	double getResistorCurrent(int i, int j, double resistance);
+	double getResistorCurrent(Edge resistor);
 	// --------------------------
 
 private:
