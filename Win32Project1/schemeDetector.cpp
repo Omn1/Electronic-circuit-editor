@@ -35,14 +35,15 @@ int schemeDetector::detectMin(int a, int b) {
 	return b;
 }
 
-std::pair<int, int> schemeDetector::detectCellRound(int x, int y)
+std::pair<int, int> schemeDetector::detectCellRound(int x, int y, int t)
 {
-	int x1 = x / cellSize;
-	int y1 = y / cellSize;
-	if (x % cellSize > cellSize / 2) {
+	printf("eeeeee %d", t);
+	int x1 = x / t;
+	int y1 = y / t;
+	if (x % t > t / 2) {
 		x1 += 1;
 	}
-	if (y % cellSize > cellSize / 2) {
+	if (y % t > t / 2) {
 		y1 += 1;
 	}
 	std::pair <int, int> ans = std::make_pair(x1, y1);
@@ -224,11 +225,24 @@ bool schemeDetector::detectIsOnScheme(detectPoint a) {
 
 //---------------------------------------------------------------------starter image transform
 
-bool schemeDetector::contrast(float red, float blue, float green) {
-	if (red + blue + green < 1.5) {
+float schemeDetector::detectBright(sf::Color col) {
+	return (float(col.b + col.r + col.g) / 256 / 3);
+}
+
+bool schemeDetector::contrast(float red, float blue, float green, int i, int j) {
+	bool res = false;
+	for (int ni = i - 5; ni <= i + 5; ni++) {
+		for (int nj = j - 5; nj <= j + 5; nj++) {
+			detectPoint p = detectPoint(ni, nj);
+			if (detectIsOnScreen(p) && detectBright(detectStarterArray[ni][nj]) - detectBright(detectStarterArray[i][j]) > contrastDifference) {
+				res = true;
+			}
+		}
+	}
+	if (res) {
 		pixelsAdded++;
 	}
-	return (red + blue + green > 1.5);
+	return (!res);
 }
 
 //---------------------------------------------------------------------line detection
@@ -1631,10 +1645,15 @@ long double schemeDetector::detectPow(long double a, int st) {
 
 void schemeDetector::buildCorners() {
 	for (int i = 0; i < detectFinal.size(); i++) {
+//		printf("size %d   %d", detectFinal.size(), i);
 		for (int j = 0; j < connectionTypes; j++) {
+	//		printf("went to j  %d" , j);
 			int k = detectFinal[i].neighbours[j];
+		//	printf("defined k");
 			if (k != -1 && detectFinal[i].x != detectFinal[k].x && detectFinal[i].y != detectFinal[k].y) {
+			//	printf("got in if");
 				if (0 <= j && j < 8) {
+				//	printf("ot 0 do 8");
 					if (abs(detectFinal[i].x - detectFinal[k].x) > abs(detectFinal[i].y - detectFinal[k].y)) {
 						detectFinal.push_back(detectSchemePoint((detectFinal[i].x + detectFinal[k].x) / 2, detectFinal[i].y));
 						detectFinal.push_back(detectSchemePoint((detectFinal[i].x + detectFinal[k].x) / 2, detectFinal[k].y));
@@ -1643,12 +1662,12 @@ void schemeDetector::buildCorners() {
 						detectFinal[k].neighbours[(j + 4) % 8] = detectFinal.size() - 1;
 						detectFinal[detectFinal.size() - 1].neighbours[j] = k;
 						if (detectFinal[i].y > detectFinal[k].y) {
-							detectFinal[detectFinal.size() - 1].neighbours[6] = detectFinal.size() - 2;
-							detectFinal[detectFinal.size() - 2].neighbours[2] = detectFinal.size() - 1;
+							detectFinal[detectFinal.size() - 1].neighbours[0] = detectFinal.size() - 2;
+							detectFinal[detectFinal.size() - 2].neighbours[4] = detectFinal.size() - 1;
 						}
 						else {
-							detectFinal[detectFinal.size() - 1].neighbours[2] = detectFinal.size() - 2;
-							detectFinal[detectFinal.size() - 2].neighbours[6] = detectFinal.size() - 1;
+							detectFinal[detectFinal.size() - 1].neighbours[4] = detectFinal.size() - 2;
+							detectFinal[detectFinal.size() - 2].neighbours[0] = detectFinal.size() - 1;
 						}
 					}
 					else {
@@ -1659,12 +1678,12 @@ void schemeDetector::buildCorners() {
 						detectFinal[k].neighbours[(j + 4) % 8] = detectFinal.size() - 1;
 						detectFinal[detectFinal.size() - 1].neighbours[j] = k;
 						if (detectFinal[i].x > detectFinal[k].x) {
-							detectFinal[detectFinal.size() - 1].neighbours[0] = detectFinal.size() - 2;
-							detectFinal[detectFinal.size() - 2].neighbours[4] = detectFinal.size() - 1;
+							detectFinal[detectFinal.size() - 1].neighbours[6] = detectFinal.size() - 2;
+							detectFinal[detectFinal.size() - 2].neighbours[2] = detectFinal.size() - 1;
 						}
 						else {
-							detectFinal[detectFinal.size() - 1].neighbours[4] = detectFinal.size() - 2;
-							detectFinal[detectFinal.size() - 2].neighbours[0] = detectFinal.size() - 1;
+							detectFinal[detectFinal.size() - 1].neighbours[2] = detectFinal.size() - 2;
+							detectFinal[detectFinal.size() - 2].neighbours[6] = detectFinal.size() - 1;
 						}
 					}
 				}
@@ -1673,9 +1692,13 @@ void schemeDetector::buildCorners() {
 					int yi = detectFinal[i].y;
 					int xk = detectFinal[k].x;
 					int yk = detectFinal[k].y;
-					if (j == 9 || j == 13 || j == 17 || j == 21 || j == 25 || j == 29 || j == 33 || j == 37 || j == 41 || j == 45) {
+					if (j % 4 == 2) {
 						for (int it = 0; it < 4; it++) {
 							detectFinal.push_back(detectSchemePoint());
+						}
+					//	printf("nech");
+						if (j == 9) {
+							printf("          9 %d %d %d %d \n          ", xi, yi, xk, yk);
 						}
 						int s = detectFinal.size();
 						detectFinal[s - 4].x = xi;
@@ -1688,16 +1711,16 @@ void schemeDetector::buildCorners() {
 						detectFinal[s - 1].y = yk - cellElWidth;
 
 						detectFinal[i].neighbours[j] = -1;
-						detectFinal[k].neighbours[j - 1] = -1;
+						detectFinal[k].neighbours[j + 1] = -1;
 
 						detectFinal[i].neighbours[6] = s - 4;
 						detectFinal[s - 4].neighbours[2] = i;
 
 						detectFinal[s - 3].neighbours[j] = s - 2;
-						detectFinal[s - 2].neighbours[j - 1] = s - 3;
+						detectFinal[s - 2].neighbours[j + 1] = s - 3;
 
-						detectFinal[s - 1].neighbours[6] = k;
-						detectFinal[k].neighbours[2] = s - 1;
+						detectFinal[s - 1].neighbours[2] = k;
+						detectFinal[k].neighbours[6] = s - 1;
 
 						if (xi > xk) {
 							detectFinal[s - 4].neighbours[4] = s - 3;
@@ -1714,10 +1737,11 @@ void schemeDetector::buildCorners() {
 							detectFinal[s - 1].neighbours[4] = s - 2;
 						}
 					}
-					if (j == 10 || j == 14 || j == 18 || j == 22 || j == 26 || j == 30 || j == 34 || j == 38 || j == 42 || j == 46) {
+					if (j % 4 == 1) {
 						for (int it = 0; it < 4; it++) {
 							detectFinal.push_back(detectSchemePoint());
 						}
+				//		printf("ch");
 						int s = detectFinal.size();
 						detectFinal[s - 4].x = xi + cellElWidth;
 						detectFinal[s - 4].y = yi;
@@ -1729,13 +1753,13 @@ void schemeDetector::buildCorners() {
 						detectFinal[s - 1].y = yk;
 
 						detectFinal[i].neighbours[j] = -1;
-						detectFinal[k].neighbours[j + 1] = -1;
+						detectFinal[k].neighbours[j - 1] = -1;
 
 						detectFinal[i].neighbours[0] = s - 4;
 						detectFinal[s - 4].neighbours[4] = i;
 
 						detectFinal[s - 3].neighbours[j] = s - 2;
-						detectFinal[s - 2].neighbours[j + 1] = s - 3;
+						detectFinal[s - 2].neighbours[j - 1] = s - 3;
 
 						detectFinal[s - 1].neighbours[0] = k;
 						detectFinal[k].neighbours[4] = s - 1;
@@ -1757,6 +1781,7 @@ void schemeDetector::buildCorners() {
 					}
 				}
 			}
+			//printf("got through if");
 		}
 	}
 }
@@ -1826,52 +1851,52 @@ void schemeDetector::buildWire(detectPoint a, detectPoint b) {
 }
 
 void schemeDetector::addElement(detectPoint a, int j) {
-	if (j == 8) {
+	if (j == 11) {
 		detectEl.push_back(detectElement(a.x - 1, a.y - cellElSize, 1, 1));
 	}
-	if (j == 9) {
+	if (j == 10) {
 		detectEl.push_back(detectElement(a.x - 1, a.y, 1, 1));
 	}
-	if (j == 10) {
+	if (j == 9) {
 		detectEl.push_back(detectElement(a.x, a.y - 1, 1, 0));
 	}
-	if (j == 11) {
+	if (j == 8) {
 		detectEl.push_back(detectElement(a.x - cellElSize, a.y - 1, 1, 0));
 	}
-	if (j == 12) {
+	if (j == 15) {
 		detectEl.push_back(detectElement(a.x - cellElWidth, a.y - cellElSize, 2, 1));
 	}
-	if (j == 13) {
+	if (j == 14) {
 		detectEl.push_back(detectElement(a.x - cellElWidth, a.y, 2, 1));
 	}
-	if (j == 14) {
+	if (j == 13) {
 		detectEl.push_back(detectElement(a.x, a.y - cellElWidth, 2, 0));
 	}
-	if (j == 15) {
+	if (j == 12) {
 		detectEl.push_back(detectElement(a.x - cellElSize, a.y - cellElWidth, 2, 0));
 	}
-	if (j == 40) {
+	if (j == 43) {
 		detectEl.push_back(detectElement(a.x - cellElWidth, a.y - cellElSize, 3, 1));
-	}
-	if (j == 41) {
-		detectEl.push_back(detectElement(a.x - cellElWidth, a.y, 3, 1));
 	}
 	if (j == 42) {
-		detectEl.push_back(detectElement(a.x, a.y - cellElWidth, 3, 0));
-	}
-	if (j == 43) {
-		detectEl.push_back(detectElement(a.x - cellElSize, a.y - cellElWidth, 3, 0));
-	}
-	if (j == 44) {
-		detectEl.push_back(detectElement(a.x - cellElWidth, a.y - cellElSize, 3, 1));
-	}
-	if (j == 45) {
 		detectEl.push_back(detectElement(a.x - cellElWidth, a.y, 3, 1));
 	}
-	if (j == 46) {
-		detectEl.push_back(detectElement(a.x, a.y - cellElWidth, 3, 0));
+	if (j == 41) {
+		detectEl.push_back(detectElement(a.x, a.y - cellElWidth, 3, 2));
+	}
+	if (j == 40) {
+		detectEl.push_back(detectElement(a.x - cellElSize, a.y - cellElWidth, 3, 2));
 	}
 	if (j == 47) {
+		detectEl.push_back(detectElement(a.x - cellElWidth, a.y - cellElSize, 3, 3));
+	}
+	if (j == 46) {
+		detectEl.push_back(detectElement(a.x - cellElWidth, a.y, 3, 3));
+	}
+	if (j == 45) {
+		detectEl.push_back(detectElement(a.x, a.y - cellElWidth, 3, 0));
+	}
+	if (j == 44) {
 		detectEl.push_back(detectElement(a.x - cellElSize, a.y - cellElWidth, 3, 0));
 	}
 }
@@ -2026,7 +2051,7 @@ int schemeDetector::detectMain()
 			double blueColor = detectStarterArray[i][j].b / 256.0;
 			double redColor = detectStarterArray[i][j].r / 256.0;
 			double greenColor = detectStarterArray[i][j].g / 256.0;
-			detectBWArray[i][j] = !contrast(redColor, blueColor, greenColor);
+			detectBWArray[i][j] = !contrast(redColor, blueColor, greenColor, i, j);
 		}
 	}
 	detectScheme();
@@ -2037,6 +2062,7 @@ int schemeDetector::detectMain()
 		for (int j = 8; j < connectionTypes; j++) {
 			if (j % 2 == 0) {
 				if (detectFinal[i].neighbours[j] != -1) {
+					printf("i am here");
 					int k = detectFinal[i].neighbours[j];
 					cuString++;
 					detectFinal[i].power[j] = 0;
@@ -2049,16 +2075,24 @@ int schemeDetector::detectMain()
 			}
 		}
 	}
+	printf("%d", cellSize);
 	cellSize = cellSize / (cellCo * cellElSize);
+	printf("%d", cellSize);
 	for (int i = 0; i < detectFinal.size(); i++) {
-		std::pair<int, int> newCoor = detectCellRound(detectFinal[i].x, detectFinal[i].y);
+		printf("do functii %d", cellSize);
+		std::pair<int, int> newCoor = detectCellRound(detectFinal[i].x, detectFinal[i].y, cellSize);
 		detectFinal[i].x = newCoor.first;
 		detectFinal[i].y = newCoor.second;
 	}
+	printf("size   %d", detectFinal.size());
 	buildCorners();
+	printf("builded corners   %d", detectFinal.size());
 	fillEl();
+	printf("filled elem   %d", detectFinal.size());
 	detectOutScheme();
+	printf("detectedOut   %d", detectFinal.size());
 	result = detectGiveOut();
+	printf("   %d", detectFinal.size());
 	return 0;
 }
 

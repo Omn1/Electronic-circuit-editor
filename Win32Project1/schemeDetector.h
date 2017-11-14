@@ -20,6 +20,7 @@ const double MM_PI = 3.1415926;
 const int cellCo = 3;
 const int cellElSize = 5;
 const int cellElWidth = 2;
+const double contrastDifference = 0.2;
 
 class schemeDetector
 {
@@ -117,7 +118,7 @@ private:
 	std::vector< std::vector <int> > detectVertexesNumbers;
 	int detectMax(int a, int b);
 	int detectMin(int a, int b);
-	std::pair<int, int> detectCellRound(int x, int y);
+	std::pair<int, int> detectCellRound(int x, int y, int t);
 	bool equalPoints(detectPoint a, detectPoint b);
 	bool equalLines(detectLine a, detectLine b);
 	float detectGetAzimut(detectPoint from, detectPoint to);
@@ -132,7 +133,8 @@ private:
 	detectPoint detectGetIntersection(detectLine l, detectLine m);
 	bool detectIsOnScreen(detectPoint a);
 	bool detectIsOnScheme(detectPoint a);
-	bool contrast(float red, float blue, float green);
+	float detectBright(sf::Color col);
+	bool contrast(float red, float blue, float green, int i, int j);
 	void detectFillDynamicArrays();
 	void detectGenLineVector();
 	void detectDeleteDoubleLines();
