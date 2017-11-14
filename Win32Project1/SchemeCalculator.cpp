@@ -294,7 +294,7 @@ void SchemeCalculator::recalculate(double time)
 		wires[inductor.getI()][inductor.getJ()]--;
 		wires[inductor.getJ()][inductor.getI()]--;
 	}
-	
+	return;
 	i = 0;
 	for (auto battery : ACBatteries)
 	{
@@ -377,7 +377,6 @@ void SchemeCalculator::updateGraph()
 	for (int i = 0; i < n; i++)
 	{
 		if (order[i] == -1) dfsUpdateGraph(i, o++);
-		for (int j = 0; j < n; j++) graph[i][j] = 0;
 	}
 
 	graph.clear();
