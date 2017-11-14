@@ -119,6 +119,8 @@ EditorElement::EditorElement()
 	, v2(0)
 	, sizeX(1)
 	, sizeY(0)
+	, realAmperage(0)
+	, isShortCircuit(0)
 {
 	updateRotation();
 }
@@ -134,6 +136,8 @@ EditorElement::EditorElement(coord posT, int isRotatedT)
 	, v2(0)
 	, sizeX(1)
 	, sizeY(0)
+	, realAmperage(0)
+	, isShortCircuit(0)
 {
 	updateRotation();
 }
@@ -152,6 +156,8 @@ EditorElement::EditorElement(EditorElement * elem)
 	v1 = elem->v1;
 	v2 = elem->v2;
 	texture = elem->texture;
+	realAmperage = elem->realAmperage;
+	isShortCircuit = elem->isShortCircuit;
 }
 
 
@@ -192,6 +198,8 @@ Resistor::Resistor(Resistor * elem)
 	v1 = elem->v1;
 	v2 = elem->v2;
 	texture = elem->texture;
+	realAmperage = elem->realAmperage;
+	isShortCircuit = elem->isShortCircuit;
 }
 
 std::vector<std::pair<std::string,std::string>> Resistor::getInspectorElements() 
@@ -209,6 +217,8 @@ Battery::Battery()
 {
 	sizeX = batterySizeX;
 	sizeY = batterySizeY;
+	resistance = 0;
+	realVoltage = 1;
 	texture = batteryTexture;
 	updateRotation();
 }
@@ -219,6 +229,7 @@ Battery::Battery(coord posT, int isRotatedT)
 	sizeX = batterySizeX;
 	sizeY = batterySizeY;
 	resistance = 0;
+	realVoltage = 1;
 	texture = batteryTexture;
 	updateRotation();
 }
@@ -237,6 +248,8 @@ Battery::Battery(Battery * elem)
 	v1 = elem->v1;
 	v2 = elem->v2;
 	texture = elem->texture;
+	realAmperage = elem->realAmperage;
+	isShortCircuit = elem->isShortCircuit;
 }
 
 std::vector<std::pair<std::string, std::string>> Battery::getInspectorElements()
@@ -244,7 +257,10 @@ std::vector<std::pair<std::string, std::string>> Battery::getInspectorElements()
 	std::vector<std::pair<std::string, std::string>> temp;
 	temp.push_back(make_pair(std::string("Item type:"), std::string("Battery")));
 	temp.push_back(make_pair("Voltage:", std::to_string(realVoltage).substr(0, 10)));
-	temp.push_back(make_pair("Amperage:", std::to_string(getVoltage() / resistance).substr(0, 10)));
+	temp.push_back(make_pair("Amperage:", std::to_string(realAmperage).substr(0, 10)));
+	temp.push_back(make_pair(std::string("Short circuit:"), "No"));
+	if (isShortCircuit)
+		temp.back().second = "Yes";
 	return temp;
 }
 
@@ -280,6 +296,8 @@ Lamp::Lamp(Lamp * elem)
 	v1 = elem->v1;
 	v2 = elem->v2;
 	texture = elem->texture;
+	realAmperage = elem->realAmperage;
+	isShortCircuit = elem->isShortCircuit;
 }
 
 std::vector<std::pair<std::string, std::string>> Lamp::getInspectorElements()

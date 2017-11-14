@@ -8,7 +8,8 @@ class EditorElement
 public:
 	coord pos;
 	int isRotated;
-	double resistance, realVoltage;
+	double resistance, realVoltage, realAmperage;
+	bool isShortCircuit;
     float sizeX, sizeY;
 	float deltaX, deltaY;
 	double getVoltage();
