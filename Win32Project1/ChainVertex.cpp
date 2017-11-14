@@ -49,6 +49,19 @@ void ChainVertex::draw(sf::RenderWindow * window)
 	window->draw(temp);
 }
 
+std::vector<std::pair<std::string, std::string>> ChainVertex::getInspectorElements()
+{
+	std::vector<std::pair<std::string, std::string>> temp;
+	temp.push_back(make_pair(std::string("Item type:"), "Vertex"));
+	temp.push_back(make_pair(std::string("Potential:"), std::to_string(potential).substr(0,10)));
+	return temp;
+}
+
+ElementRect ChainVertex::getElementRect()
+{
+	return{ pos.x - 0.2f, pos.x + 0.2f, pos.y - 0.2f, pos.y + 0.2f };
+}
+
 ChainVertex::~ChainVertex()
 {
 }

@@ -851,6 +851,16 @@ void selectItem() {
 	isItemSelected = 0;
 	isSelected = 0;
 	ElementRect temp = { curX, curX, curY, curY };
+	for (int i = 0; i < vertexes.size(); i++) {
+		if (vertexes[i]->pos.x == curX && vertexes[i]->pos.y == curY) {
+			setSelection(vertexes[i]->getElementRect());
+			isSelected = 1;
+			isItemSelected = 1;
+			selectedItemType = 4;
+			selectedItemI = i;
+			return;
+		}
+	}
 	for (int i = 0; i < resistors.size(); i++) {
 		if (checkUntrictCollision(temp, resistors[i]->getElementRect())) {
 			setSelection(resistors[i]->getElementRect());
@@ -1289,7 +1299,7 @@ void rotateItem() {
 			resistors[selectedItemI]->rotate();
 			resistors[selectedItemI]->rotate();
 		}
-		deleteInnerWires(resistors[selectedItemI]->getElementRect());
+		deleteStrictInnerWires(resistors[selectedItemI]->getElementRect());
 		deleteStrictInnerVertexes(resistors[selectedItemI]->getElementRect());
 		setSelection(resistors[selectedItemI]->getElementRect());
 	}
@@ -1306,7 +1316,7 @@ void rotateItem() {
 			batteries[selectedItemI]->rotate();
 			batteries[selectedItemI]->rotate();
 		}
-		deleteInnerWires(batteries[selectedItemI]->getElementRect());
+		deleteStrictInnerWires(batteries[selectedItemI]->getElementRect());
 		deleteStrictInnerVertexes(batteries[selectedItemI]->getElementRect());
 		setSelection(batteries[selectedItemI]->getElementRect());
 	}
@@ -1340,7 +1350,7 @@ void rotateItem() {
 			capacitors[selectedItemI]->rotate();
 			capacitors[selectedItemI]->rotate();
 		}
-		deleteInnerWires(capacitors[selectedItemI]->getElementRect());
+		deleteStrictInnerWires(capacitors[selectedItemI]->getElementRect());
 		deleteStrictInnerVertexes(capacitors[selectedItemI]->getElementRect());
 		setSelection(capacitors[selectedItemI]->getElementRect());
 	}
@@ -1363,6 +1373,9 @@ void drawItemInspector() {
 		}
 		else if (selectedItemType == 3) {
 			inspector.sections = capacitors[selectedItemI]->getInspectorElements();
+		}
+		else if (selectedItemType == 4) {
+			inspector.sections = vertexes[selectedItemI]->getInspectorElements();
 		}
 	}
 	else {
