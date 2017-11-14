@@ -1472,6 +1472,8 @@ int launchMainWindow()
 	itemBarBG.setOutlineThickness(separatorThickness);
 	itemBarBG.setPosition(sf::Vector2f(0, topMargin));
 
+	float itemBarDelta = 0;
+
 	while (window.isOpen())
 	{
 		sf::Event event;
@@ -1506,13 +1508,30 @@ int launchMainWindow()
 					static_cast<float>(window.getSize().y))));
 			else if (event.type == sf::Event::MouseWheelScrolled) {
 				float delta = event.mouseWheelScroll.delta;
-				cellSize *= (100.f - delta) / 100.f;
-				vertexRadius *= (100.f - delta) / 100.f;
-				gridThickness = round(cellSize * 2 / 60);
-				gridThickness = std::max(gridThickness, 1.f);
-				gridOutlineThickness = 2 * round(cellSize * 2 / 60);
-				gridOutlineThickness = std::max(gridOutlineThickness, 1.f);
-				resetFieldSize();
+				if (sf::Mouse::getPosition(window).x < leftMargin) {
+					delta *= 10;
+					delta = std::min(delta, -itemBarDelta);
+					itemBarDelta += delta;
+					wireIconBG.move(0, delta);
+					resistorIconBG.move(0, delta);
+					batteryIconBG.move(0, delta);
+					lampIconBG.move(0, delta);
+					vertexIconBG.move(0, delta);
+					wireItem.move(0, delta);
+					resistorItem.move(0, delta);
+					batteryItem.move(0, delta);
+					lampItem.move(0, delta);
+					vertexItem.move(0, delta);
+				}
+				else {
+					cellSize *= (100.f - delta) / 100.f;
+					vertexRadius *= (100.f - delta) / 100.f;
+					gridThickness = round(cellSize * 2 / 60);
+					gridThickness = std::max(gridThickness, 1.f);
+					gridOutlineThickness = 2 * round(cellSize * 2 / 60);
+					gridOutlineThickness = std::max(gridOutlineThickness, 1.f);
+					resetFieldSize();
+				}
 			}
 			else if (event.type == sf::Event::MouseButtonPressed) {
 				if (event.mouseButton.button == sf::Mouse::Left) {
@@ -1545,7 +1564,7 @@ int launchMainWindow()
 						}
 					}
 					else if (event.mouseButton.y >= topMargin && event.mouseButton.x < leftMargin) {
-						int tCurItem = int(event.mouseButton.y - topMargin) / int(itemIconSize + separatorThickness);
+						int tCurItem = int(event.mouseButton.y - topMargin - itemBarDelta) / int(itemIconSize + separatorThickness);
 						if (tCurItem < 5) {
 							currentItem = tCurItem;
 							isRotated = 0;
@@ -1676,25 +1695,25 @@ int launchMainWindow()
 		}
 		menuBarBG.setSize(sf::Vector2f(leftMargin + editorFieldSizeX - separatorThickness, topMargin));
 		itemBarBG.setSize(sf::Vector2f(leftMargin, editorFieldSizeY));
-		window.draw(menuBarBG);
 		window.draw(itemBarBG);
 		window.draw(wireIconBG);
 		window.draw(resistorIconBG);
 		window.draw(batteryIconBG);
 		window.draw(lampIconBG);
 		window.draw(vertexIconBG);
-		window.draw(drawButtonBG);
-		window.draw(selectButtonBG);
-		window.draw(rotateButtonBG);
-		window.draw(deleteButtonBG);
-		window.draw(editButtonBG);
 		window.draw(wireItem);
 		window.draw(resistorItem);
 		window.draw(batteryItem);
 		window.draw(lampItem);
 		window.draw(vertexItem);
-		selectedItemBG.setPosition(sf::Vector2f(-separatorThickness, topMargin + currentItem*(itemIconSize + separatorThickness)));
+		selectedItemBG.setPosition(sf::Vector2f(-separatorThickness, itemBarDelta + topMargin + currentItem*(itemIconSize + separatorThickness)));
 		window.draw(selectedItemBG);
+		window.draw(menuBarBG);
+		window.draw(drawButtonBG);
+		window.draw(selectButtonBG);
+		window.draw(rotateButtonBG);
+		window.draw(deleteButtonBG);
+		window.draw(editButtonBG);
 		selectedModeBG.setPosition(sf::Vector2f(-separatorThickness + curMode*(topMargin + separatorThickness), -separatorThickness));
 		window.draw(selectedModeBG);
 		window.draw(drawButton);
