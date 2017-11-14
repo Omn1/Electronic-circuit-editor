@@ -14,6 +14,8 @@
 #include "InspectorInput.h"
 #include "FieldVersion.h"
 #include "VersionHandler.h"
+#include "schemeDetector.h"
+#include <string>
 
 float gridThickness = 2;
 float gridOutlineThickness = 4;
@@ -1505,6 +1507,36 @@ void openEvent() {
 	handler.openFromFile(input->fields[0]);
 	setVersion(handler.getCurrentVersion());
 }
+schemeDetector detector;
+void openFromImage(std::string filename) {
+	handler.reset();
+	setVersion(handler.getCurrentVersion());
+	detector.detect(filename);
+	for (int i = 0; i < detector.detectEl.size(); i++) {
+		if (detector.detectEl[i].type == 0) {
+			wires.push_back(new EditorElement({ (float)detector.detectEl[i].x,(float)detector.detectEl[i].y }, detector.detectEl[i].rotation));
+		}
+		else if (detector.detectEl[i].type == 1) {
+			resistors.push_back(new Resistor({ (float)detector.detectEl[i].x,(float)detector.detectEl[i].y }, detector.detectEl[i].rotation));
+		}
+		else if (detector.detectEl[i].type == 2) {
+			lamps.push_back(new Lamp({ (float)detector.detectEl[i].x,(float)detector.detectEl[i].y }, detector.detectEl[i].rotation));
+		}
+		else if (detector.detectEl[i].type == 3) {
+			batteries.push_back(new Battery({ (float)detector.detectEl[i].x,(float)detector.detectEl[i].y }, detector.detectEl[i].rotation));
+		}
+	}
+	addWireEnds();
+	updateVersion();
+}
+
+void openFromImageEvent() {
+	InspectorInput * input = new InspectorInput(0, 150, 300, 16);
+	input->fieldNames = { "File name:" };
+	input->fields = { "" };
+	input->draw();
+	openFromImage(input->fields[0]);
+}
 int launchMainWindow()
 {
 	//AllocConsole();
@@ -1784,6 +1816,9 @@ int launchMainWindow()
 						}
 						else if (curButton == 5) {
 							saveEvent();
+						}
+						else if (curButton == 6) {
+							openFromImageEvent();
 						}
 					}
 				}
