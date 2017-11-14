@@ -35,6 +35,8 @@ float batterySizeX = 5;
 float batterySizeY = 4;
 float lampSizeX = 5;
 float lampSizeY = 4;
+float capacitorSizeX = 5;
+float capacitorSizeY = 4;
 float inspectorWidth = 200;
 float inspectorLeftTextMargin = 10;
 float inspectorLineSize = 50;
@@ -45,10 +47,12 @@ sf::Vector2f sectionSize = sf::Vector2f(inspectorWidth, 2 * inspectorLineSize);
 sf::Texture *resistorTexture = new sf::Texture();
 sf::Texture *batteryTexture = new sf::Texture();
 sf::Texture *lampTexture = new sf::Texture();
+sf::Texture *capacitorTexture = new sf::Texture();
 
 std::vector<Resistor*> resistors;
 std::vector<Battery*> batteries;
 std::vector<Lamp*> lamps;
+std::vector<Capacitor* > capacitors;
 std::vector<EditorElement*> wires;
 std::vector<ChainVertex*> vertexes;
 sf::Texture toolbarTexture, itemTexture;
@@ -275,7 +279,7 @@ void updatePhysics()
 }
 
 FieldVersion* getCurrentVersion() {
-	FieldVersion* temp = new FieldVersion(vertexes, wires, resistors, batteries, lamps);
+	FieldVersion* temp = new FieldVersion(vertexes, wires, resistors, batteries, lamps, capacitors);
 	return temp;
 }
 
@@ -334,6 +338,18 @@ void setVersion(FieldVersion* temp) {
 			lamps[i]->v2 = vertexes[pos - tvertexes.begin()];
 		}
 	}
+	capacitors.resize(temp->capacitors.size());
+	for (int i = 0; i < capacitors.size(); i++) {
+		capacitors[i] = new Capacitor(temp->capacitors[i]);
+		auto pos = std::lower_bound(tvertexes.begin(), tvertexes.end(), temp->capacitors[i]->v1);
+		if (pos != tvertexes.end() && (*pos == temp->capacitors[i]->v1)) {
+			capacitors[i]->v1 = vertexes[pos - tvertexes.begin()];
+		}
+		pos = std::lower_bound(tvertexes.begin(), tvertexes.end(), temp->capacitors[i]->v2);
+		if (pos != tvertexes.end() && (*pos == temp->capacitors[i]->v2)) {
+			capacitors[i]->v2 = vertexes[pos - tvertexes.begin()];
+		}
+	}
 }
 
 void updateVersion() {
@@ -354,6 +370,9 @@ void updateVersion() {
 	for (int i = 0; i < wires.size(); i++) {
 		delete wires[i];
 	}
+	for (int i = 0; i < capacitors.size(); i++) {
+		delete capacitors[i];
+	}
 	setVersion(handler.getCurrentVersion());
 }
 
@@ -365,7 +384,7 @@ bool checkUntrictCollision(ElementRect a, ElementRect b) {
 }
 
 
-bool isColliding(ElementRect rect, std::vector<Resistor*> &tresistors = resistors, std::vector<Battery*> &tbatteries = batteries, std::vector<Lamp*> &tlamps = lamps) {
+bool isColliding(ElementRect rect, std::vector<Resistor*> &tresistors = resistors, std::vector<Battery*> &tbatteries = batteries, std::vector<Lamp*> &tlamps = lamps, std::vector<Capacitor*> &tcapacitors = capacitors) {
 	if (rect.x1 > rect.x2) {
 		std::swap(rect.x1, rect.x2);
 	}
@@ -384,6 +403,11 @@ bool isColliding(ElementRect rect, std::vector<Resistor*> &tresistors = resistor
 	}
 	for (int i = 0; i < tlamps.size(); i++) {
 		if (checkStrictCollision(rect, tlamps[i]->getElementRect())) {
+			return 1;
+		}
+	}
+	for (int i = 0; i < tcapacitors.size(); i++) {
+		if (checkStrictCollision(rect, tcapacitors[i]->getElementRect())) {
 			return 1;
 		}
 	}
@@ -767,6 +791,39 @@ void putLamp() {
 	updateVersion();
 }
 
+void drawCapacitorPreview() {
+	drawItemPreview(capacitorSizeX, capacitorSizeY);
+}
+
+
+void putCapacitor() {
+	float curX, curY;
+	getCurrentFlooredFieldCoords(curX, curY);
+	Capacitor temp({ curX, curY }, isRotated);
+	if (isColliding(temp.getElementRect())) {
+		return;
+	}
+	deleteStrictInnerVertexes(temp.getElementRect());
+	if (isRotated % 2 == 0) {
+		deleteStrictInnerWires(curX, curY, curX + capacitorSizeX, curY + capacitorSizeY);
+	}
+	else {
+		deleteStrictInnerWires(curX, curY, curX + capacitorSizeY, curY + capacitorSizeX);
+	}
+	capacitors.push_back(new Capacitor({ curX,curY }, isRotated));
+	if (isRotated % 2 == 0) {
+		putChainVertex(curX, curY + capacitorSizeY / 2, 0);
+		putChainVertex(curX + capacitorSizeX, curY + capacitorSizeY / 2, 0);
+	}
+	else {
+		putChainVertex(curX + capacitorSizeY / 2, curY, 0);
+		putChainVertex(curX + capacitorSizeY / 2, curY + capacitorSizeX, 0);
+	}
+	capacitors.back()->v1 = vertexes[vertexes.size() - 1];
+	capacitors.back()->v2 = vertexes[vertexes.size() - 2];
+	updateVersion();
+}
+
 int curMode = 0;
 
 bool isSelected = 0;
@@ -818,6 +875,15 @@ void selectItem() {
 			isItemSelected = 1;
 			isSelected = 1;
 			selectedItemType = 2;
+			selectedItemI = i;
+		}
+	}
+	for (int i = 0; i < capacitors.size(); i++) {
+		if (checkUntrictCollision(temp, capacitors[i]->getElementRect())) {
+			setSelection(capacitors[i]->getElementRect());
+			isItemSelected = 1;
+			isSelected = 1;
+			selectedItemType = 3;
 			selectedItemI = i;
 		}
 	}
@@ -887,6 +953,12 @@ void drawSelection() {
 			debugCount++;
 		}
 	}
+	for (int i = 0; i < capacitors.size(); i++) {
+		if (checkStrictCollision(temp, capacitors[i]->getElementRect())) {
+			drawItemSelectionHighlight(capacitors[i]);
+			debugCount++;
+		}
+	}
 	drawDottedRect(startX*cellSize + leftMargin, startY*cellSize + topMargin, endX*cellSize + leftMargin, endY*cellSize + topMargin, sf::Color::Green);
 }
 
@@ -911,6 +983,7 @@ void deleteSelection() {
 	std::vector<Resistor*> tresistors;
 	std::vector<Battery*> tbatteries;
 	std::vector<Lamp*> tlamps;
+	std::vector<Capacitor*> tcapacitors;
 	std::vector<ChainVertex*> tvertexes;
 	std::vector<int> isVertexSelected(vertexes.size(),1);
 	ElementRect temp = { X1,X2,Y1,Y2 };
@@ -941,6 +1014,15 @@ void deleteSelection() {
 			tvertexes.push_back(lamps[i]->v2);
 		}
 	}
+	for (int i = 0; i < capacitors.size(); i++) {
+		if (!(checkStrictCollision(temp, capacitors[i]->getElementRect()))) {
+			tcapacitors.push_back(capacitors[i]);
+		}
+		else {
+			tvertexes.push_back(capacitors[i]->v1);
+			tvertexes.push_back(capacitors[i]->v2);
+		}
+	}
 	std::sort(tvertexes.begin(), tvertexes.end());
 	for (int i = 0; i < vertexes.size(); i++) {
 		if (checkStrictCollision(temp, { vertexes[i]->pos.x,vertexes[i]->pos.x,vertexes[i]->pos.y,vertexes[i]->pos.y }) || (std::binary_search(tvertexes.begin(), tvertexes.end(), vertexes[i]))) {
@@ -956,6 +1038,7 @@ void deleteSelection() {
 	resistors = tresistors;
 	batteries = tbatteries;
 	lamps = tlamps;
+	capacitors = tcapacitors;
 	vertexes = tvertexes;
 	deleteInnerWires(X1, Y1, X2, Y2);
 	isSelected = 0;
@@ -1032,6 +1115,16 @@ void moveSelection(float deltaX, float deltaY) {
 			lamps[i]->move(0, 0);
 		}
 	}
+	for (int i = 0; i < capacitors.size(); i++) {
+		if (checkStrictCollision(temp, capacitors[i]->getElementRect())) {
+			capacitors[i]->move(deltaX, deltaY);
+			deleteStrictInnerWires(capacitors[i]->getElementRect());
+			deleteStrictInnerVertexes(capacitors[i]->getElementRect());
+		}
+		else {
+			capacitors[i]->move(0, 0);
+		}
+	}
 	addWireEnds();
 	updateVersion();
 }
@@ -1060,6 +1153,7 @@ bool checkMoveNotColliding(float deltaX, float deltaY) {
 	std::vector<Resistor*> tresistors;
 	std::vector<Battery*> tbatteries;
 	std::vector<Lamp*> tlamps;
+	std::vector<Capacitor*> tcapacitors;
 	for (int i = 0; i < resistors.size(); i++) {
 		if (!checkStrictCollision(temp, resistors[i]->getElementRect())) {
 			tresistors.push_back(resistors[i]);
@@ -1075,23 +1169,35 @@ bool checkMoveNotColliding(float deltaX, float deltaY) {
 			tlamps.push_back(lamps[i]);
 		}
 	}
+	for (int i = 0; i < capacitors.size(); i++) {
+		if (!checkStrictCollision(temp, capacitors[i]->getElementRect())) {
+			tcapacitors.push_back(capacitors[i]);
+		}
+	}
 	for (int i = 0; i < resistors.size(); i++) {
 		if (checkStrictCollision(temp, resistors[i]->getElementRect())) {
-			if (isColliding(getMovedRect(resistors[i]->getElementRect(), deltaX, deltaY), tresistors, tbatteries, tlamps)) {
+			if (isColliding(getMovedRect(resistors[i]->getElementRect(), deltaX, deltaY), tresistors, tbatteries, tlamps, tcapacitors)) {
 				return 0;
 			}
 		}
 	}
 	for (int i = 0; i < batteries.size(); i++) {
 		if (checkStrictCollision(temp, batteries[i]->getElementRect())) {
-			if (isColliding(getMovedRect(batteries[i]->getElementRect(), deltaX, deltaY), tresistors, tbatteries, tlamps)) {
+			if (isColliding(getMovedRect(batteries[i]->getElementRect(), deltaX, deltaY), tresistors, tbatteries, tlamps, tcapacitors)) {
 				return 0;
 			}
 		}
 	}
 	for (int i = 0; i < lamps.size(); i++) {
 		if (checkStrictCollision(temp, lamps[i]->getElementRect())) {
-			if (isColliding(getMovedRect(lamps[i]->getElementRect(), deltaX, deltaY), tresistors, tbatteries, tlamps)) {
+			if (isColliding(getMovedRect(lamps[i]->getElementRect(), deltaX, deltaY), tresistors, tbatteries, tlamps, tcapacitors)) {
+				return 0;
+			}
+		}
+	}
+	for (int i = 0; i < capacitors.size(); i++) {
+		if (checkStrictCollision(temp, capacitors[i]->getElementRect())) {
+			if (isColliding(getMovedRect(capacitors[i]->getElementRect(), deltaX, deltaY), tresistors, tbatteries, tlamps, tcapacitors)) {
 				return 0;
 			}
 		}
@@ -1125,6 +1231,13 @@ bool checkMovedElementsInField(float deltaX, float deltaY) {
 	for (int i = 0; i < lamps.size(); i++) {
 		if (checkStrictCollision(temp, lamps[i]->getElementRect())) {
 			if (lamps[i]->getElementRect().x1 + deltaX < 0 || lamps[i]->getElementRect().y1 + deltaY < 0) {
+				return 0;
+			}
+		}
+	}
+	for (int i = 0; i < capacitors.size(); i++) {
+		if (checkStrictCollision(temp, capacitors[i]->getElementRect())) {
+			if (capacitors[i]->getElementRect().x1 + deltaX < 0 || capacitors[i]->getElementRect().y1 + deltaY < 0) {
 				return 0;
 			}
 		}
@@ -1171,7 +1284,7 @@ void rotateItem() {
 				tresistors.push_back(resistors[i]);
 			}
 		}
-		if (isColliding(resistors[selectedItemI]->getElementRect(), tresistors, batteries, lamps)) {
+		if (isColliding(resistors[selectedItemI]->getElementRect(), tresistors, batteries, lamps, capacitors)) {
 			resistors[selectedItemI]->rotate();
 			resistors[selectedItemI]->rotate();
 			resistors[selectedItemI]->rotate();
@@ -1188,7 +1301,7 @@ void rotateItem() {
 				tbatteries.push_back(batteries[i]);
 			}
 		}
-		if (isColliding(batteries[selectedItemI]->getElementRect(), resistors, tbatteries, lamps)) {
+		if (isColliding(batteries[selectedItemI]->getElementRect(), resistors, tbatteries, lamps, capacitors)) {
 			batteries[selectedItemI]->rotate();
 			batteries[selectedItemI]->rotate();
 			batteries[selectedItemI]->rotate();
@@ -1205,7 +1318,7 @@ void rotateItem() {
 				tlamps.push_back(lamps[i]);
 			}
 		}
-		if (isColliding(lamps[selectedItemI]->getElementRect(), resistors, batteries, tlamps)) {
+		if (isColliding(lamps[selectedItemI]->getElementRect(), resistors, batteries, tlamps, capacitors)) {
 			lamps[selectedItemI]->rotate();
 			lamps[selectedItemI]->rotate();
 			lamps[selectedItemI]->rotate();
@@ -1213,6 +1326,23 @@ void rotateItem() {
 		deleteInnerWires(lamps[selectedItemI]->getElementRect());
 		deleteStrictInnerVertexes(lamps[selectedItemI]->getElementRect());
 		setSelection(lamps[selectedItemI]->getElementRect());
+	}
+	else if (selectedItemType == 3) {
+		capacitors[selectedItemI]->rotate();
+		std::vector<Capacitor*> tcapacitors;
+		for (int i = 0; i < capacitors.size(); i++) {
+			if (i != selectedItemI) {
+				tcapacitors.push_back(capacitors[i]);
+			}
+		}
+		if (isColliding(capacitors[selectedItemI]->getElementRect(), resistors, batteries, lamps, tcapacitors)) {
+			capacitors[selectedItemI]->rotate();
+			capacitors[selectedItemI]->rotate();
+			capacitors[selectedItemI]->rotate();
+		}
+		deleteInnerWires(capacitors[selectedItemI]->getElementRect());
+		deleteStrictInnerVertexes(capacitors[selectedItemI]->getElementRect());
+		setSelection(capacitors[selectedItemI]->getElementRect());
 	}
 	updateVersion();
 }
@@ -1230,6 +1360,9 @@ void drawItemInspector() {
 		}
 		else if (selectedItemType == 2) {
 			inspector.sections = lamps[selectedItemI]->getInspectorElements();
+		}
+		else if (selectedItemType == 3) {
+			inspector.sections = capacitors[selectedItemI]->getInspectorElements();
 		}
 	}
 	else {
@@ -1281,6 +1414,10 @@ void openInputWindow() {
 		inputWindow->fieldNames = { "Resistance:" };
 		inputWindow->fields = { std::to_string(lamps[selectedItemI]->resistance).substr(0,8) };
 	}
+	else if (selectedItemType == 3) {
+		inputWindow->fieldNames = { "Capacity:" };
+		inputWindow->fields = { std::to_string(capacitors[selectedItemI]->capacity).substr(0,8) };
+	}
 	inputWindow->draw();
 	if (selectedItemType == 0) {
 		resistors[selectedItemI]->resistance = atof(inputWindow->fields[0].c_str());
@@ -1290,6 +1427,9 @@ void openInputWindow() {
 	}
 	else if (selectedItemType == 2) {
 		lamps[selectedItemI]->resistance = atof(inputWindow->fields[0].c_str());
+	}
+	else if (selectedItemType == 3) {
+		capacitors[selectedItemI]->capacity = atof(inputWindow->fields[0].c_str());
 	}
 	updateVersion();
 }
@@ -1366,6 +1506,11 @@ int launchMainWindow()
 	vertexItem.setTextureRect(sf::IntRect(360, 0, 90, 90));
 	vertexItem.setPosition(sf::Vector2f(-separatorThickness, topMargin + 4 * (itemIconSize + separatorThickness)));
 
+	sf::Sprite capacitorItem;
+	capacitorItem.setTexture(itemTexture);
+	capacitorItem.setTextureRect(sf::IntRect(450, 0, 90, 90));
+	capacitorItem.setPosition(sf::Vector2f(-separatorThickness, topMargin + 5 * (itemIconSize + separatorThickness)));
+
 	sf::RectangleShape wireIconBG(sf::Vector2f(leftMargin, itemIconSize));
 	wireIconBG.setFillColor(sf::Color::White);
 	wireIconBG.setOutlineColor(mainColor);
@@ -1395,6 +1540,12 @@ int launchMainWindow()
 	vertexIconBG.setOutlineColor(mainColor);
 	vertexIconBG.setOutlineThickness(separatorThickness);
 	vertexIconBG.setPosition(sf::Vector2f(0, topMargin + 5 * separatorThickness + 4 * itemIconSize));
+
+	sf::RectangleShape capacitorIconBG(sf::Vector2f(leftMargin, itemIconSize));
+	capacitorIconBG.setFillColor(sf::Color::White);
+	capacitorIconBG.setOutlineColor(mainColor);
+	capacitorIconBG.setOutlineThickness(separatorThickness);
+	capacitorIconBG.setPosition(sf::Vector2f(0, topMargin + 6 * separatorThickness + 5 * itemIconSize));
 
 	sf::RectangleShape selectedItemBG(sf::Vector2f(itemIconSize + 2 * separatorThickness, itemIconSize + 2 * separatorThickness));
 	selectedItemBG.setFillColor(sf::Color::Transparent);
@@ -1517,11 +1668,13 @@ int launchMainWindow()
 					batteryIconBG.move(0, delta);
 					lampIconBG.move(0, delta);
 					vertexIconBG.move(0, delta);
+					capacitorIconBG.move(0, delta);
 					wireItem.move(0, delta);
 					resistorItem.move(0, delta);
 					batteryItem.move(0, delta);
 					lampItem.move(0, delta);
 					vertexItem.move(0, delta);
+					capacitorItem.move(0, delta);
 				}
 				else {
 					cellSize *= (100.f - delta) / 100.f;
@@ -1552,6 +1705,9 @@ int launchMainWindow()
 							else if (currentItem == 4) {
 								putChainVertex(-1,-1,1);
 							}
+							else if (currentItem == 5) {
+								putCapacitor();
+							}
 						}
 						else if (curMode == 1) {
 							if (!isInSelection(event.mouseButton.x, event.mouseButton.y)) {
@@ -1565,7 +1721,7 @@ int launchMainWindow()
 					}
 					else if (event.mouseButton.y >= topMargin && event.mouseButton.x < leftMargin) {
 						int tCurItem = int(event.mouseButton.y - topMargin - itemBarDelta) / int(itemIconSize + separatorThickness);
-						if (tCurItem < 5) {
+						if (tCurItem < 6) {
 							currentItem = tCurItem;
 							isRotated = 0;
 							curMode = 0;
@@ -1648,6 +1804,9 @@ int launchMainWindow()
 			//drawLamp(lamps[i].pos.x, lamps[i].pos.y, lamps[i].isRotated);
 			lamps[i]->draw(&window);
 		}
+		for (int i = 0; i < capacitors.size(); i++) {
+			capacitors[i]->draw(&window);
+		}
 		for (int i = 0; i < vertexes.size(); i++) {
 			vertexes[i]->draw(&window);
 		}
@@ -1671,6 +1830,9 @@ int launchMainWindow()
 				}
 				else if (currentItem == 3) {
 					drawLampPreview();
+				}
+				else if (currentItem == 5) {
+					drawCapacitorPreview();
 				}
 			}
 		}
@@ -1701,11 +1863,13 @@ int launchMainWindow()
 		window.draw(batteryIconBG);
 		window.draw(lampIconBG);
 		window.draw(vertexIconBG);
+		window.draw(capacitorIconBG);
 		window.draw(wireItem);
 		window.draw(resistorItem);
 		window.draw(batteryItem);
 		window.draw(lampItem);
 		window.draw(vertexItem);
+		window.draw(capacitorItem);
 		selectedItemBG.setPosition(sf::Vector2f(-separatorThickness, itemBarDelta + topMargin + currentItem*(itemIconSize + separatorThickness)));
 		window.draw(selectedItemBG);
 		window.draw(menuBarBG);
@@ -1772,6 +1936,9 @@ int main() {
 		isError = 1;
 	}
 	if (!lampTexture->loadFromFile("lamp.png")) {
+		isError = 1;
+	}
+	if (!capacitorTexture->loadFromFile("capacitor.png")) {
 		isError = 1;
 	}
 	resistorTexture->setSmooth(1);

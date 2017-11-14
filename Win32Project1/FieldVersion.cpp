@@ -6,7 +6,7 @@ FieldVersion::FieldVersion()
 {
 }
 
-FieldVersion::FieldVersion(const std::vector<ChainVertex*> &ttvertexes, const std::vector<EditorElement*> &twires, const std::vector<Resistor*> &tresistors, const std::vector<Battery*> &tbatteries, const std::vector<Lamp*> &tlamps)
+FieldVersion::FieldVersion(const std::vector<ChainVertex*> &ttvertexes, const std::vector<EditorElement*> &twires, const std::vector<Resistor*> &tresistors, const std::vector<Battery*> &tbatteries, const std::vector<Lamp*> &tlamps, const std::vector<Capacitor*> &tcapacitors)
 {
 	std::vector<ChainVertex*> tvertexes(ttvertexes.size());
 	for (int i = 0; i < ttvertexes.size(); i++) {
@@ -60,6 +60,17 @@ FieldVersion::FieldVersion(const std::vector<ChainVertex*> &ttvertexes, const st
 			lamps[i]->v2 = vertexes[pos - tvertexes.begin()];
 		}
 	}
+	for (int i = 0; i < tcapacitors.size(); i++) {
+		capacitors.push_back(new Capacitor(tcapacitors[i]));
+		auto pos = std::lower_bound(tvertexes.begin(), tvertexes.end(), tcapacitors[i]->v1);
+		if (pos != tvertexes.end() && (*pos == tcapacitors[i]->v1)) {
+			capacitors[i]->v1 = vertexes[pos - tvertexes.begin()];
+		}
+		pos = std::lower_bound(tvertexes.begin(), tvertexes.end(), tcapacitors[i]->v2);
+		if (pos != tvertexes.end() && (*pos == tcapacitors[i]->v2)) {
+			capacitors[i]->v2 = vertexes[pos - tvertexes.begin()];
+		}
+	}
 }
 
 FieldVersion::FieldVersion(const FieldVersion & temp)
@@ -83,6 +94,10 @@ FieldVersion::FieldVersion(const FieldVersion & temp)
 	vertexes.resize(temp.vertexes.size());
 	for (int i = 0; i < vertexes.size(); i++) {
 		vertexes[i] = temp.vertexes[i];
+	}
+	capacitors.resize(temp.capacitors.size());
+	for (int i = 0; i < capacitors.size(); i++) {
+		capacitors[i] = temp.capacitors[i];
 	}
 }
 
@@ -179,6 +194,25 @@ void FieldVersion::saveToFile(std::string filename)
 		}
 		cout << "\n";
 	}
+	cout << capacitors.size() << "\n";
+	for (int i = 0; i < capacitors.size(); i++) {
+		cout << capacitors[i]->pos.x << " " << capacitors[i]->pos.y << " " << capacitors[i]->isRotated << " " << capacitors[i]->capacity << "\n";
+		auto pos = std::lower_bound(tvertexes.begin(), tvertexes.end(), capacitors[i]->v1);
+		if (pos == tvertexes.end() || (*pos != capacitors[i]->v1)) {
+			cout << -1 << " ";
+		}
+		else {
+			cout << pos - tvertexes.begin() << " ";
+		}
+		pos = std::lower_bound(tvertexes.begin(), tvertexes.end(), capacitors[i]->v2);
+		if (pos == tvertexes.end() || (*pos != capacitors[i]->v2)) {
+			cout << -1 << " ";
+		}
+		else {
+			cout << pos - tvertexes.begin() << " ";
+		}
+		cout << "\n";
+	}
 }
 
 void FieldVersion::openFromFile(std::string filename)
@@ -246,5 +280,19 @@ void FieldVersion::openFromFile(std::string filename)
 			wires[i]->v1 = vertexes[v1n];
 		if (v2n != -1)
 			wires[i]->v2 = vertexes[v2n];
+	}
+	cin >> temp;
+	capacitors.resize(temp);
+	for (int i = 0; i < temp; i++) {
+		float x, y, isRot, capacity;
+		cin >> x >> y >> isRot >> capacity;
+		capacitors[i] = new Capacitor({ x,y }, isRot);
+		capacitors[i]->capacity = capacity;
+		int v1n, v2n;
+		cin >> v1n >> v2n;
+		if (v1n != -1)
+			capacitors[i]->v1 = vertexes[v1n];
+		if (v2n != -2)
+			capacitors[i]->v2 = vertexes[v2n];
 	}
 }
