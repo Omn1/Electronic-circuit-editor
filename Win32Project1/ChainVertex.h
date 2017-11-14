@@ -1,6 +1,8 @@
 #pragma once
 #include <SFML/Graphics.hpp>
 #include "Editor.h"
+#include <string>
+
 class ChainVertex
 {
 public:
@@ -12,6 +14,8 @@ public:
 	void operator = (const ChainVertex &vert);
 	void operator = (ChainVertex * vert);
 	void draw(sf::RenderWindow * window);
+	std::vector<std::pair<std::string, std::string> > getInspectorElements();
+	ElementRect getElementRect();
 	~ChainVertex();
 };
 

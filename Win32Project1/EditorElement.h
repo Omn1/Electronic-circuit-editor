@@ -8,7 +8,7 @@ class EditorElement
 public:
 	coord pos;
 	int isRotated;
-	double resistance, realVoltage, realAmperage;
+	double resistance, realVoltage, realAmperage, capacity;
 	bool isShortCircuit;
     float sizeX, sizeY;
 	float deltaX, deltaY;
@@ -54,5 +54,14 @@ public:
 	Lamp();
 	Lamp(coord posT, int isRotatedT);
 	Lamp(Lamp * elem);
+	std::vector<std::pair<std::string, std::string>> getInspectorElements();
+};
+
+class Capacitor : public EditorElement
+{
+public:
+	Capacitor();
+	Capacitor(coord pos, int isRotatedT);
+	Capacitor(Capacitor * elem);
 	std::vector<std::pair<std::string, std::string>> getInspectorElements();
 };

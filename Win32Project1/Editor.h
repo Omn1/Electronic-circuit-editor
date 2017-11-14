@@ -21,6 +21,8 @@ extern float batterySizeX;
 extern float batterySizeY;
 extern float lampSizeX;
 extern float lampSizeY;
+extern float capacitorSizeX;
+extern float capacitorSizeY;
 extern float inspectorWidth;
 extern float inspectorLeftTextMargin;
 extern float inspectorLineSize;
@@ -34,4 +36,4 @@ struct coord {
 struct ElementRect {
 	float x1, x2, y1, y2;
 };
-extern sf::Texture *resistorTexture, *batteryTexture, *lampTexture;
+extern sf::Texture *resistorTexture, *batteryTexture, *lampTexture, *capacitorTexture;

@@ -121,6 +121,7 @@ EditorElement::EditorElement()
 	, sizeY(0)
 	, realAmperage(0)
 	, isShortCircuit(0)
+	, capacity(0)
 {
 	updateRotation();
 }
@@ -138,6 +139,7 @@ EditorElement::EditorElement(coord posT, int isRotatedT)
 	, sizeY(0)
 	, realAmperage(0)
 	, isShortCircuit(0)
+	, capacity(0)
 {
 	updateRotation();
 }
@@ -158,6 +160,7 @@ EditorElement::EditorElement(EditorElement * elem)
 	texture = elem->texture;
 	realAmperage = elem->realAmperage;
 	isShortCircuit = elem->isShortCircuit;
+	capacity = elem->capacity;
 }
 
 
@@ -200,6 +203,7 @@ Resistor::Resistor(Resistor * elem)
 	texture = elem->texture;
 	realAmperage = elem->realAmperage;
 	isShortCircuit = elem->isShortCircuit;
+	capacity = elem->capacity;
 }
 
 std::vector<std::pair<std::string,std::string>> Resistor::getInspectorElements() 
@@ -250,6 +254,7 @@ Battery::Battery(Battery * elem)
 	texture = elem->texture;
 	realAmperage = elem->realAmperage;
 	isShortCircuit = elem->isShortCircuit;
+	capacity = elem->capacity;
 }
 
 std::vector<std::pair<std::string, std::string>> Battery::getInspectorElements()
@@ -298,6 +303,7 @@ Lamp::Lamp(Lamp * elem)
 	texture = elem->texture;
 	realAmperage = elem->realAmperage;
 	isShortCircuit = elem->isShortCircuit;
+	capacity = elem->capacity;
 }
 
 std::vector<std::pair<std::string, std::string>> Lamp::getInspectorElements()
@@ -307,5 +313,56 @@ std::vector<std::pair<std::string, std::string>> Lamp::getInspectorElements()
 	temp.push_back(make_pair("Voltage:", std::to_string(getVoltage()).substr(0,10)));
 	temp.push_back(make_pair("Amperage:", std::to_string(getVoltage() / resistance).substr(0, 10)));
 	temp.push_back(make_pair("Resistance:", std::to_string(resistance).substr(0, 10)));
+	return temp;
+}
+
+Capacitor::Capacitor()
+	: EditorElement()
+{
+	sizeX = capacitorSizeX;
+	sizeY = capacitorSizeY;
+	texture = capacitorTexture;
+	resistance = 0;
+	capacity = 1;
+	updateRotation();
+}
+
+Capacitor::Capacitor(coord posT, int isRotatedT)
+	: EditorElement(posT, isRotatedT)
+{
+	sizeX = capacitorSizeX;
+	sizeY = capacitorSizeY;
+	texture = capacitorTexture; 
+	resistance = 0;
+	capacity = 1;
+	updateRotation();
+}
+
+Capacitor::Capacitor(Capacitor * elem)
+{
+	pos.x = elem->pos.x;
+	pos.y = elem->pos.y;
+	isRotated = elem->isRotated;
+	resistance = elem->resistance;
+	realVoltage = elem->realVoltage;
+	sizeX = elem->sizeX;
+	sizeY = elem->sizeY;
+	deltaX = elem->deltaX;
+	deltaY = elem->deltaY;
+	v1 = elem->v1;
+	v2 = elem->v2;
+	texture = elem->texture;
+	realAmperage = elem->realAmperage;
+	isShortCircuit = elem->isShortCircuit;
+	capacity = elem->capacity;
+}
+
+std::vector<std::pair<std::string, std::string>> Capacitor::getInspectorElements()
+{
+	std::vector<std::pair<std::string, std::string>> temp;
+	temp.push_back(make_pair(std::string("Item type:"), std::string("Capacitor")));
+	temp.push_back(make_pair("Voltage:", std::to_string(getVoltage()).substr(0, 10)));
+	//temp.push_back(make_pair("Amperage:", std::to_string(getVoltage() / resistance).substr(0, 10)));
+	temp.push_back(make_pair("Capacity:", std::to_string(capacity).substr(0, 10)));
 	return temp;
 }

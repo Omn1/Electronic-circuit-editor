@@ -32,6 +32,22 @@ void VersionHandler::redo() {
 	}
 }
 
+void VersionHandler::saveToFile(std::string filename)
+{
+	versions[curVersion]->saveToFile(filename);
+}
+
+void VersionHandler::openFromFile(std::string filename)
+{
+	curVersion = 0;
+	while (versions.size() - 1 != curVersion) {
+		versions.pop_back();
+	}
+	FieldVersion * temp = new FieldVersion();
+	temp->openFromFile(filename);
+	addVersion(temp);
+}
+
 FieldVersion* VersionHandler::getCurrentVersion()
 {
 	return versions[curVersion];
