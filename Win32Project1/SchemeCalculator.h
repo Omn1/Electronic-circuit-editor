@@ -40,7 +40,7 @@ public:
 	int addDCBattery(Edge battery);
 	void removeDCBattery(int battery);
 
-	int addACBattery(int i, int j, double emf, double cf, double time);
+	int addACBattery(int i, int j, double emf, double cf, double phi);
 	int addACBattery(Edge3 battery);
 	void removeACBattery(int battery_id);
 	// --------------------------
@@ -54,7 +54,7 @@ public:
 	std::vector<double> getACBatteriesCurrents();
 	std::vector<double> getDCBatteriesCurrents();
 	std::vector<bool> getACBatteriesShortCircuits();
-	std::vector<bool> getDCBAtteriesShortCircuits();
+	std::vector<bool> getDCBatteriesShortCircuits();
 	// --------------------------
 
 private:
@@ -67,7 +67,7 @@ private:
 	void dfsUpdateGraph(int v, int o);
 
 	std::vector <int> order;
-	int s, t;
+	int s, t, o;
 	// --------------------------
 
 	// geometrical params

@@ -294,7 +294,7 @@ void SchemeCalculator::recalculate(double time)
 		wires[inductor.getI()][inductor.getJ()]--;
 		wires[inductor.getJ()][inductor.getI()]--;
 	}
-	return;
+	
 	i = 0;
 	for (auto battery : ACBatteries)
 	{
@@ -315,14 +315,19 @@ void SchemeCalculator::recalculate(double time)
 				if (order[inductor.getI()] == s || order[inductor.getJ()] == s) ACBatteriesCurrents[i] += abs(inductorsCurrent[j]);
 				j++;
 			}
+
 			j = 0;
 			for (auto capacitor : capacitors)
 			{
 				if (order[capacitor.getI()] == s || order[capacitor.getJ()] == s) ACBatteriesCurrents[i] += abs(capacitorsCurrent[j]);
 				j++;
 			}
-			for (int j = 0; j < n; j++) ACBatteriesCurrents[i] += abs(potentials[j] - potentials[s]) * abs(graph[s][j]);
-			ACBatteriesCurrents[i] /= 2;
+			
+			for (int j = 0; j < n; j++)
+			{
+				if (order[j] != order[s]) continue;
+				for (int k = 0; k < n; k++) ACBatteriesCurrents[i] += abs((potentials[k] - potentials[j]) * real(a[k][j]));
+			}
 
 			wires[ss][tt]++;
 			wires[tt][ss]++;
@@ -330,7 +335,7 @@ void SchemeCalculator::recalculate(double time)
 
 		i++;
 	}
-	return;
+	
 	i = 0;
 	for (auto battery : DCBatteries)
 	{
@@ -351,15 +356,19 @@ void SchemeCalculator::recalculate(double time)
 				if (order[inductor.getI()] == s || order[inductor.getJ()] == s) DCBatteriesCurrents[i] += abs(inductorsCurrent[j]);
 				j++;
 			}
+
 			j = 0;
 			for (auto capacitor : capacitors)
 			{
 				if (order[capacitor.getI()] == s || order[capacitor.getJ()] == s) DCBatteriesCurrents[i] += abs(capacitorsCurrent[j]);
 				j++;
 			}
-			
-			for (int j = 0; j < n; j++) DCBatteriesCurrents[i] += abs(potentials[j] - potentials[s]) * abs(graph[s][j]);
-			DCBatteriesCurrents[i] /= 2;
+
+			for (int j = 0; j < n; j++)
+			{
+				if (order[j] != order[s]) continue;
+				for (int k = 0; k < n; k++) DCBatteriesCurrents[i] += abs((potentials[k] - potentials[j]) * real(a[k][j]));
+			}
 
 			wires[ss][tt]++;
 			wires[tt][ss]++;
@@ -373,7 +382,7 @@ void SchemeCalculator::updateGraph()
 {
 	order.clear();
 	order.resize(n, -1);
-	int o = 0;
+	o = 0;
 	for (int i = 0; i < n; i++)
 	{
 		if (order[i] == -1) dfsUpdateGraph(i, o++);
@@ -567,7 +576,7 @@ std::vector<bool> SchemeCalculator::getACBatteriesShortCircuits()
 	return ACShortCircuit;
 }
 
-std::vector<bool> SchemeCalculator::getDCBAtteriesShortCircuits()
+std::vector<bool> SchemeCalculator::getDCBatteriesShortCircuits()
 {
 	return DCShortCircuit;
 }
