@@ -265,6 +265,7 @@ void updatePhysics()
 	}
 	// wires!!!
 
+	calc.updateSize(vertexes.size());
 	calc.recalculate(timer.getElapsedTime().asSeconds());
 
 	std::vector <double> potentials = calc.getPotentials();

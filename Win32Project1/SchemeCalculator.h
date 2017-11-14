@@ -57,6 +57,12 @@ public:
 	std::vector<bool> getDCBatteriesShortCircuits();
 	// --------------------------
 
+	// graph size functions + variables
+	// --------------------------
+	int n;
+	void updateSize(int n);
+	// --------------------------
+
 private:
 	// calculating functions + variables
 	// --------------------------
@@ -83,12 +89,6 @@ private:
 	std::list <Edge3> ACBatteries;
 	std::vector <double> capacitorsCurrent, inductorsCurrent, DCBatteriesCurrents, ACBatteriesCurrents;
 	std::vector <bool> DCShortCircuit, ACShortCircuit;
-	// --------------------------
-
-	// graph size functions + variables
-	// --------------------------
-	int n;
-	void updateSize(int n);
 	// --------------------------
 };
 
