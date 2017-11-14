@@ -294,7 +294,7 @@ void SchemeCalculator::recalculate(double time)
 		wires[inductor.getI()][inductor.getJ()]--;
 		wires[inductor.getJ()][inductor.getI()]--;
 	}
-	
+	return;
 	i = 0;
 	for (auto battery : ACBatteries)
 	{
@@ -377,7 +377,6 @@ void SchemeCalculator::updateGraph()
 	for (int i = 0; i < n; i++)
 	{
 		if (order[i] == -1) dfsUpdateGraph(i, o++);
-		for (int j = 0; j < n; j++) graph[i][j] = 0;
 	}
 
 	graph.clear();
@@ -571,5 +570,15 @@ std::vector<bool> SchemeCalculator::getACBatteriesShortCircuits()
 std::vector<bool> SchemeCalculator::getDCBAtteriesShortCircuits()
 {
 	return DCShortCircuit;
+}
+
+double SchemeCalculator::getResistorCurrent(int i, int j, double resistance)
+{
+	return abs(potentials[i] - potentials[j]) * resistance * abs(a[i][j]);
+}
+
+double SchemeCalculator::getResistorCurrent(Edge resistor)
+{
+	return getResistorCurrent(resistor.getI(), resistor.getJ(), resistor.getLength());
 }
 // end of getting function block

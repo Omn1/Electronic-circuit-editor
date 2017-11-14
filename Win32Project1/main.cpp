@@ -117,9 +117,12 @@ void updatePhysics()
 
 	for (int i = 0; i < vertexes.size(); i++)
 	{
-		for (int j = 0; j < vertexes.size(); j++)
+		for (int j = i + 1; j < vertexes.size(); j++)
 		{
-			if (vertexes[i]->pos == vertexes[j]->pos) calc.addWire(i, j);
+			if (vertexes[i]->pos == vertexes[j]->pos)
+			{
+				calc.addWire(i, j);
+			}
 		}
 	}
 
@@ -259,13 +262,28 @@ void updatePhysics()
 	// wires!!!
 
 	calc.recalculate(timer.getElapsedTime().asSeconds());
+
 	std::vector <double> potentials = calc.getPotentials();
 
 	for (int i = 0; i < vertexes.size(); i++) vertexes[i]->potential = potentials[i];
+
 	std::vector <double> batteriesCurrents = calc.getDCBatteriesCurrents();
 	//for (int i = 0; i < batteries.size(); i++) batteries[i]->setCurrent(batteriesCurrents[i]);
+
 	std::vector <bool> shortCircuits = calc.getDCBAtteriesShortCircuits();
 	//for (int i = 0; i < batteries.size(); i++) batteries[i]->setShortCircuit(shortCircuits[i]);
+
+	for (auto resistor : resistors)
+	{
+		getEdge(resistor, from, to);
+		//resistor->setCurrent(calc.getResistorCurrent(from, to, resistor->resistance));
+	}
+
+	for (auto lamp : lamps)
+	{
+		getEdge(lamp, from, to);
+		//lamp->setCurrent(calc.getResistorCurrent(from, to, lamp->resistance));
+	}
 }
 
 FieldVersion* getCurrentVersion() {
