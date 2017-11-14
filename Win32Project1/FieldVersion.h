@@ -1,5 +1,6 @@
 #pragma once
 #include "EditorElement.h"
+#include <string>
 
 class FieldVersion
 {
@@ -13,5 +14,7 @@ public:
 	FieldVersion(const std::vector<ChainVertex*> &ttvertexes, const std::vector<EditorElement*> &twires, const std::vector<Resistor*> &tresistors, const std::vector<Battery*> &tbatteries, const std::vector<Lamp*> &tlamps);
 	FieldVersion(const FieldVersion &temp);
 	~FieldVersion();
+	void saveToFile(std::string filename);
+	void openFromFile(std::string filename);
 };
 

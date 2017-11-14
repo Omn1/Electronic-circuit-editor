@@ -337,8 +337,24 @@ void setVersion(FieldVersion* temp) {
 }
 
 void updateVersion() {
-	handler.addVersion(getCurrentVersion());
-	setVersion(getCurrentVersion());
+	FieldVersion * temp = getCurrentVersion();
+	handler.addVersion(temp);
+	for (int i = 0; i < vertexes.size(); i++) {
+		delete vertexes[i];
+	}
+	for (int i = 0; i < resistors.size(); i++) {
+		delete resistors[i];
+	}
+	for (int i = 0; i < batteries.size(); i++) {
+		delete batteries[i];
+	}
+	for (int i = 0; i < lamps.size(); i++) {
+		delete lamps[i];
+	}
+	for (int i = 0; i < wires.size(); i++) {
+		delete wires[i];
+	}
+	setVersion(handler.getCurrentVersion());
 }
 
 bool checkStrictCollision(ElementRect a, ElementRect b) {
@@ -970,7 +986,7 @@ void moveSelection(float deltaX, float deltaY) {
 	}
 	ElementRect temp = { X1,X2,Y1,Y2 };
 	for (int i = 0; i < vertexes.size(); i++) {
-		if (checkStrictCollision(temp, { vertexes[i]->pos.x,vertexes[i]->pos.x,vertexes[i]->pos.y,vertexes[i]->pos.y })) {
+		if (checkUntrictCollision(temp, { vertexes[i]->pos.x,vertexes[i]->pos.x,vertexes[i]->pos.y,vertexes[i]->pos.y })) {
 			vertexes[i]->pos.x += deltaX;
 			vertexes[i]->pos.y += deltaY;
 		}
@@ -982,26 +998,38 @@ void moveSelection(float deltaX, float deltaY) {
 		if (a >= X1 && c <= X2 && b >= Y1 && d <= Y2) {
 			wires[i]->move(deltaX, deltaY);
 		}
+		else {
+			wires[i]->move(0, 0);
+		}
 	}
 	for (int i = 0; i < resistors.size(); i++) {
 		if (checkStrictCollision(temp, resistors[i]->getElementRect())) {
 			resistors[i]->move(deltaX, deltaY);
-			deleteInnerWires(resistors[i]->getElementRect());
+			deleteStrictInnerWires(resistors[i]->getElementRect());
 			deleteStrictInnerVertexes(resistors[i]->getElementRect());
+		}
+		else {
+			resistors[i]->move(0, 0);
 		}
 	}
 	for (int i = 0; i < batteries.size(); i++) {
 		if (checkStrictCollision(temp, batteries[i]->getElementRect())) {
 			batteries[i]->move(deltaX, deltaY);
-			deleteInnerWires(batteries[i]->getElementRect());
+			deleteStrictInnerWires(batteries[i]->getElementRect());
 			deleteStrictInnerVertexes(batteries[i]->getElementRect());
+		}
+		else {
+			batteries[i]->move(0, 0);
 		}
 	}
 	for (int i = 0; i < lamps.size(); i++) {
 		if (checkStrictCollision(temp, lamps[i]->getElementRect())) {
 			lamps[i]->move(deltaX, deltaY);
-			deleteInnerWires(lamps[i]->getElementRect());
+			deleteStrictInnerWires(lamps[i]->getElementRect());
 			deleteStrictInnerVertexes(lamps[i]->getElementRect());
+		}
+		else {
+			lamps[i]->move(0, 0);
 		}
 	}
 	addWireEnds();
@@ -1280,14 +1308,14 @@ void undoEvent() {
 	handler.undo();
 	isItemSelected = 0;
 	isSelected = 0;
-	//setVersion(handler.getCurrentVersion());
+	setVersion(handler.getCurrentVersion());
 }
 
 void redoEvent() {
 	handler.redo();
 	isItemSelected = 0;
 	isSelected = 0;
-	//setVersion(handler.getCurrentVersion());
+	setVersion(handler.getCurrentVersion());
 }
 
 void saveEvent() {
@@ -1295,7 +1323,16 @@ void saveEvent() {
 	input->fieldNames = { "File name:" };
 	input->fields = { "NONAME.txt" };
 	input->draw();
-	//handler.saveToFile(input->fields[0]);
+	handler.saveToFile(input->fields[0]);
+}
+
+void openEvent() {
+	InspectorInput * input = new InspectorInput(0, 150, 300, 16);
+	input->fieldNames = { "File name:" };
+	input->fields = { "NONAME.txt" };
+	input->draw();
+	handler.openFromFile(input->fields[0]);
+	setVersion(handler.getCurrentVersion());
 }
 int launchMainWindow()
 {
@@ -1459,6 +1496,9 @@ int launchMainWindow()
 				else if (event.key.code == sf::Keyboard::S && event.key.control == 1) {
 					saveEvent();
 				}
+				else if (event.key.code == sf::Keyboard::O && event.key.control == 1) {
+					openEvent();
+				}
 			}
 			else if (event.type == sf::Event::Resized)
 				window.setView(view = sf::View(sf::FloatRect(0.f, 0.f,
@@ -1470,7 +1510,7 @@ int launchMainWindow()
 				vertexRadius *= (100.f - delta) / 100.f;
 				gridThickness = round(cellSize * 2 / 60);
 				gridThickness = std::max(gridThickness, 1.f);
-				gridOutlineThickness = gridThickness * 2;
+				gridOutlineThickness = 2 * round(cellSize * 2 / 60);
 				gridOutlineThickness = std::max(gridOutlineThickness, 1.f);
 				resetFieldSize();
 			}
@@ -1565,7 +1605,6 @@ int launchMainWindow()
 		temp.setFillColor(sf::Color::Black);
 		temp.setOutlineThickness(gridOutlineThickness);
 		temp.setOutlineColor(sf::Color::Black);
-		setVersion(handler.getCurrentVersion());
 		for (int i = 0; i < wires.size(); i++) {
 			if (wires[i]->isRotated == 0) {
 				temp.setSize(sf::Vector2f(cellSize, roundf(gridThickness)));
