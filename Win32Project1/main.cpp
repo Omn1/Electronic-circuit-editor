@@ -272,18 +272,6 @@ void updatePhysics()
 
 	std::vector <bool> shortCircuits = calc.getDCBAtteriesShortCircuits();
 	//for (int i = 0; i < batteries.size(); i++) batteries[i]->setShortCircuit(shortCircuits[i]);
-
-	for (auto resistor : resistors)
-	{
-		getEdge(resistor, from, to);
-		//resistor->setCurrent(calc.getResistorCurrent(from, to, resistor->resistance));
-	}
-
-	for (auto lamp : lamps)
-	{
-		getEdge(lamp, from, to);
-		//lamp->setCurrent(calc.getResistorCurrent(from, to, lamp->resistance));
-	}
 }
 
 FieldVersion* getCurrentVersion() {

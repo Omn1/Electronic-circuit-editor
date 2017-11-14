@@ -571,14 +571,4 @@ std::vector<bool> SchemeCalculator::getDCBAtteriesShortCircuits()
 {
 	return DCShortCircuit;
 }
-
-double SchemeCalculator::getResistorCurrent(int i, int j, double resistance)
-{
-	return abs(potentials[i] - potentials[j]) * resistance * abs(a[i][j]);
-}
-
-double SchemeCalculator::getResistorCurrent(Edge resistor)
-{
-	return getResistorCurrent(resistor.getI(), resistor.getJ(), resistor.getLength());
-}
 // end of getting function block
