@@ -362,7 +362,7 @@ std::vector<std::pair<std::string, std::string>> Capacitor::getInspectorElements
 	std::vector<std::pair<std::string, std::string>> temp;
 	temp.push_back(make_pair(std::string("Item type:"), std::string("Capacitor")));
 	temp.push_back(make_pair("Voltage:", std::to_string(getVoltage()).substr(0, 10)));
-	//temp.push_back(make_pair("Amperage:", std::to_string(getVoltage() / resistance).substr(0, 10)));
+	temp.push_back(make_pair("Amperage:", std::to_string(realAmperage).substr(0, 10)));
 	temp.push_back(make_pair("Capacity:", std::to_string(capacity).substr(0, 10)));
 	return temp;
 }

@@ -119,6 +119,12 @@ void updatePhysics()
 		calc.addDCBattery(from, to, battery->realVoltage);
 	}
 
+	for (auto capacitor : capacitors)
+	{
+		getEdge(capacitor, from, to);
+		calc.addCapacitor(from, to, capacitor->capacity);
+	}
+
 	for (int i = 0; i < vertexes.size(); i++)
 	{
 		for (int j = i + 1; j < vertexes.size(); j++)
@@ -276,6 +282,12 @@ void updatePhysics()
 	for (int i = 0; i < batteries.size(); i++)
 	{
 		batteries[i]->realAmperage = batteriesCurrents[i];
+	}
+
+	std::vector <double> capacitorsCurrents = calc.getCapacitorsCurrents();
+	for (int i = 0; i < capacitors.size(); i++)
+	{
+		capacitors[i]->realAmperage = capacitorsCurrents[i];
 	}
 
 	std::vector <bool> shortCircuits = calc.getDCBatteriesShortCircuits();
